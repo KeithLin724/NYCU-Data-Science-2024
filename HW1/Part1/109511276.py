@@ -1,6 +1,7 @@
 import asyncio
 import json
 import random as rd
+import time
 
 import httpx
 from bs4 import BeautifulSoup
@@ -308,7 +309,7 @@ class CrawlerHW:
             file=CrawlerHW.POPULAR_ARTICLES_FILE_NAME, mode="w", encoding="utf-8"
         ) as f_popular:
             pass
-
+        articles_cnt, popular_cnt = 0, 0
         # make like a human
         while now_page_url != "":
             if not in_range:
@@ -326,6 +327,7 @@ class CrawlerHW:
 
             small_page_tasks = [self.craw_item(item, client) for item in small_page]
 
+            # run small page
             small_page_tasks_result = await asyncio.gather(*small_page_tasks)
 
             with open(
@@ -351,10 +353,13 @@ class CrawlerHW:
 
                     json.dump(file_dict, f_articles, ensure_ascii=False)
                     f_articles.write("\n")
+                    articles_cnt += 1
 
                     if page_dict["HotNumber"] == "爆":
                         json.dump(file_dict, f_popular, ensure_ascii=False)
                         f_popular.write("\n")
+                        popular_cnt += 1
+
                     now_year = year
                     print(
                         f"Crawl Date: {now_year}/{page_dict['Month']}/{page_dict['Day']} Page: {now_page_url}",
@@ -368,12 +373,22 @@ class CrawlerHW:
             )
 
             # break
+        print(
+            f"Crawl Date: {now_year}/{page_dict['Month']}/{page_dict['Day']} Page: {now_page_url}"
+        )
+        print(f"Articles: {articles_cnt}, Popular Articles: {popular_cnt}")
 
         return
 
     async def run(self):
         async with httpx.AsyncClient() as client:
+            start_run_time = time.time()
+
             await self.crawl(client)
+
+            end_run_time = time.time()
+
+            print(f"Run Time: {end_run_time - start_run_time}")
 
 
 if __name__ == "__main__":
