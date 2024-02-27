@@ -2,6 +2,7 @@ import asyncio
 import json
 import random as rd
 import time
+import sys
 
 import httpx
 from bs4 import BeautifulSoup
@@ -310,7 +311,7 @@ class CrawlerHW:
         ) as f_popular:
             pass
         articles_cnt, popular_cnt = 0, 0
-        # make like a human
+        # make like a human -> page by page
         while now_page_url != "":
             if not in_range:
                 break
@@ -362,29 +363,38 @@ class CrawlerHW:
 
                     now_year = year
                     print(
-                        f"Crawl Date: {now_year}/{page_dict['Month']}/{page_dict['Day']} Page: {now_page_url}",
+                        f"Crawling ... Date: {now_year}/{page_dict['Month']}/{page_dict['Day']} Page: {now_page_url}",
                         end="\r",
                     )
 
             now_page_url = CrawlerHW.to_full_link(recommend_simple_dict["Next"])
             print(
-                f"Crawl Date: {now_year}/{page_dict['Month']}/{page_dict['Day']} Page: {now_page_url}",
+                f"Crawling ... Date: {now_year}/{page_dict['Month']}/{page_dict['Day']} Page: {now_page_url}",
                 end="\r",
             )
 
             # break
         print(
-            f"Crawl Date: {now_year}/{page_dict['Month']}/{page_dict['Day']} Page: {now_page_url}"
+            f"Crawl Finish Date: {now_year}/{page_dict['Month']}/{page_dict['Day']} Page: {now_page_url}"
         )
         print(f"Articles: {articles_cnt}, Popular Articles: {popular_cnt}")
 
         return
 
     async def run(self):
+        if len(sys.argv) < 2:
+            print(
+                "please input command -> crawl, push <start_date> <end_date>, popular <start_date> <end_date>, keyword <start_date> <end_date> <keyword>"
+            )
+            sys.exit()
+
+        args_list = sys.argv[1:]
+
         async with httpx.AsyncClient() as client:
             start_run_time = time.time()
 
-            await self.crawl(client)
+            if args_list == "crawl":
+                await self.crawl(client)
 
             end_run_time = time.time()
 
