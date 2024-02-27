@@ -10,6 +10,8 @@ from rich import print
 
 SAMPLE_URL = "https://www.ptt.cc/bbs/Beauty/M.1672503968.A.5B5.html"
 START_URL = "https://www.ptt.cc/bbs/Beauty/index3662.html"
+# START_URL = "https://www.ptt.cc/bbs/Beauty/index3827.html"
+
 
 PTT_PREV_LINK = "https://www.ptt.cc"
 SEARCH_YEAR = "2023"
@@ -134,6 +136,14 @@ class CrawlerHW:
 
         header_dict = dict(zip(tab_list, value_list))
 
+        if "時間" not in header_dict:
+            # get text body #https://www.ptt.cc/bbs/Beauty/M.1690589266.A.166.html
+            process_text = body_data.contents[2]
+            process_text = process_text.split("\n")[:2]
+            process_text = [item.split(":") for item in process_text]
+            process_result_dict = {item[0]: item[1] for item in process_text}
+            header_dict |= process_result_dict
+
         # image src
         images_catch_link = body_data.find_all("div", class_="richcontent")
 
@@ -247,7 +257,7 @@ class CrawlerHW:
 
     @staticmethod
     def get_random_wait_time() -> float:
-        return rd.uniform(0.1, 5.1)
+        return rd.uniform(0.1, 1.1)
 
     @staticmethod
     def to_full_link(url: str) -> str:
@@ -267,19 +277,20 @@ class CrawlerHW:
         "save file(2) and return is in 2023"
         # make like a human
         await asyncio.sleep(CrawlerHW.get_random_wait_time())
-        print(small_page_dict)
+        # print(small_page_dict)
         page_response = await client.get(
             CrawlerHW.to_full_link(small_page_dict["URL"]),
             headers=CrawlerHW.get_header(),
         )
 
         page_dict = CrawlerHW.page_to_simple_dict(html_str=page_response.text)
+
         page_dict |= {
             "table_time": CrawlerHW.to_table_time(small_page_dict["Date"]),
             "HotNumber": small_page_dict["HotNumber"],
             "URL": CrawlerHW.to_full_link(small_page_dict["URL"]),
         }
-        print(page_dict)
+        # print(page_dict)
 
         return (page_dict["Year"], page_dict["Year"] == SEARCH_YEAR, page_dict)
 
@@ -291,7 +302,11 @@ class CrawlerHW:
         now_page_url = START_URL
         in_range = True
 
-        with open(file=CrawlerHW.ARTICLES_FILE_NAME, mode="w", encoding="utf-8") as f:
+        with open(
+            file=CrawlerHW.ARTICLES_FILE_NAME, mode="w", encoding="utf-8"
+        ) as f_articles, open(
+            file=CrawlerHW.POPULAR_ARTICLES_FILE_NAME, mode="w", encoding="utf-8"
+        ) as f_popular:
             pass
 
         # make like a human
@@ -309,15 +324,16 @@ class CrawlerHW:
 
             small_page: list[dict] = recommend_simple_dict["Body"]
 
-            now_page_url = recommend_simple_dict["Next"]
-
             small_page_tasks = [self.craw_item(item, client) for item in small_page]
 
             small_page_tasks_result = await asyncio.gather(*small_page_tasks)
 
             with open(
                 file=CrawlerHW.ARTICLES_FILE_NAME, mode="a", encoding="utf-8"
-            ) as f:
+            ) as f_articles, open(
+                file=CrawlerHW.POPULAR_ARTICLES_FILE_NAME, mode="a", encoding="utf-8"
+            ) as f_popular:
+
                 for year, is_in_2023, page_dict in small_page_tasks_result:
 
                     if year == "2024":
@@ -332,10 +348,26 @@ class CrawlerHW:
                         "title": page_dict["標題"],
                         "url": page_dict["URL"],
                     }
-                    json.dump(file_dict, f, ensure_ascii=False)
-                    f.write("\n")
 
-            break
+                    json.dump(file_dict, f_articles, ensure_ascii=False)
+                    f_articles.write("\n")
+
+                    if page_dict["HotNumber"] == "爆":
+                        json.dump(file_dict, f_popular, ensure_ascii=False)
+                        f_popular.write("\n")
+                    now_year = year
+                    print(
+                        f"Crawl Date: {now_year}/{page_dict['Month']}/{page_dict['Day']} Page: {now_page_url}",
+                        end="\r",
+                    )
+
+            now_page_url = CrawlerHW.to_full_link(recommend_simple_dict["Next"])
+            print(
+                f"Crawl Date: {now_year}/{page_dict['Month']}/{page_dict['Day']} Page: {now_page_url}",
+                end="\r",
+            )
+
+            # break
 
         return
 
