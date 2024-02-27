@@ -1,8 +1,9 @@
 import asyncio
+import json
+import random as rd
 
 import httpx
 from bs4 import BeautifulSoup
-import random as rd
 from rich import print
 
 # from fake_useragent import UserAgent
@@ -11,6 +12,7 @@ SAMPLE_URL = "https://www.ptt.cc/bbs/Beauty/M.1672503968.A.5B5.html"
 START_URL = "https://www.ptt.cc/bbs/Beauty/index3662.html"
 
 PTT_PREV_LINK = "https://www.ptt.cc"
+SEARCH_YEAR = "2023"
 
 # make like a human in CrawlerHW
 
@@ -90,19 +92,21 @@ class CrawlerHW:
         '時間': 'Sun Jan  1 00:26:06 2023',
         'Year': '2023',
         'Month': 'Jan',
-        'Date': '',
+        'Day': '',
         'Week': 'Sun',
         'Time': '00:26:06',
-        'Body': [(..., ...),  ...]}
+        # 'Body': [(..., ...),  ...]}
         """
 
         def to_detail_date(date_str: str) -> dict:
             detail_date = date_str.split(" ")
-            detail_date.remove("")
+
+            if "" in detail_date:
+                detail_date.remove("")
             return {
                 "Year": detail_date[-1],
                 "Month": detail_date[1],
-                "Date": detail_date[2],
+                "Day": detail_date[2],
                 "Week": detail_date[0],
                 "Time": detail_date[-2],
             }
@@ -249,6 +253,14 @@ class CrawlerHW:
     def to_full_link(url: str) -> str:
         return PTT_PREV_LINK + url
 
+    @staticmethod
+    def to_table_time(raw_str: str) -> str:
+        element = [
+            item if len((item := part_str.strip())) > 1 else f"0{item}"
+            for part_str in raw_str.split("/")
+        ]
+        return "".join(element)
+
     # main function
 
     async def craw_item(self, small_page_dict: dict, client: httpx.AsyncClient):
@@ -262,8 +274,14 @@ class CrawlerHW:
         )
 
         page_dict = CrawlerHW.page_to_simple_dict(html_str=page_response.text)
+        page_dict |= {
+            "table_time": CrawlerHW.to_table_time(small_page_dict["Date"]),
+            "HotNumber": small_page_dict["HotNumber"],
+            "URL": CrawlerHW.to_full_link(small_page_dict["URL"]),
+        }
         print(page_dict)
-        return
+
+        return (page_dict["Year"], page_dict["Year"] == SEARCH_YEAR, page_dict)
 
     async def crawl(self, client: httpx.AsyncClient):
 
@@ -271,8 +289,16 @@ class CrawlerHW:
 
         "page by page to get the data"
         now_page_url = START_URL
+        in_range = True
+
+        with open(file=CrawlerHW.ARTICLES_FILE_NAME, mode="w", encoding="utf-8") as f:
+            pass
+
         # make like a human
         while now_page_url != "":
+            if not in_range:
+                break
+
             recommend_page = await client.get(
                 now_page_url, headers=CrawlerHW.get_header()
             )
@@ -289,7 +315,26 @@ class CrawlerHW:
 
             small_page_tasks_result = await asyncio.gather(*small_page_tasks)
 
-            print(now_page_url)
+            with open(
+                file=CrawlerHW.ARTICLES_FILE_NAME, mode="a", encoding="utf-8"
+            ) as f:
+                for year, is_in_2023, page_dict in small_page_tasks_result:
+
+                    if year == "2024":
+                        in_range = False
+                        continue
+
+                    if not is_in_2023:
+                        continue
+
+                    file_dict = {
+                        "date": page_dict["table_time"],
+                        "title": page_dict["標題"],
+                        "url": page_dict["URL"],
+                    }
+                    json.dump(file_dict, f, ensure_ascii=False)
+                    f.write("\n")
+
             break
 
         return
