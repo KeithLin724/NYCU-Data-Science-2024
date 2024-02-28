@@ -556,8 +556,7 @@ class CrawlerHW:
             table = table.drop(columns=["like_boo_type", "body"])
             dict_list = table.to_dict("records")
             # first 10
-            total = len(table)
-            top_10 = dict_list[: CrawlerHW.FIRST_TEN]
+            total, top_10 = len(table), dict_list[: CrawlerHW.FIRST_TEN]
 
             return {type_: {"total": total, "top10": top_10}}
 
