@@ -83,6 +83,8 @@ class CrawlerHW:
     ARTICLES_FILE_NAME = "articles.jsonl"
     POPULAR_ARTICLES_FILE_NAME = "popular_articles.jsonl"
 
+    ERROR_INPUT_MESSAGE = "please input command -> crawl, push <start_date> <end_date>, popular <start_date> <end_date>, keyword <start_date> <end_date> <keyword>"
+
     def __init__(self) -> None:
         pass
 
@@ -381,11 +383,13 @@ class CrawlerHW:
 
         return
 
+    async def push(self, date_start: str, date_end: str):
+        print(date_start, date_end)
+        return
+
     async def run(self):
         if len(sys.argv) < 2:
-            print(
-                "please input command -> crawl, push <start_date> <end_date>, popular <start_date> <end_date>, keyword <start_date> <end_date> <keyword>"
-            )
+            print(CrawlerHW.ERROR_INPUT_MESSAGE)
             sys.exit()
 
         args_list = sys.argv[1:]
@@ -393,8 +397,11 @@ class CrawlerHW:
         async with httpx.AsyncClient() as client:
             start_run_time = time.time()
 
-            if args_list == "crawl":
+            if args_list[0] == "crawl":
                 await self.crawl(client)
+
+            elif args_list[0] == "push":
+                await self.push(args_list[1], args_list[2])
 
             end_run_time = time.time()
 
