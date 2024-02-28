@@ -6,6 +6,8 @@ import sys
 from typing import Callable
 from functools import reduce
 import pandas as pd
+from tqdm.asyncio import tqdm
+from pprint import pformat
 
 import httpx
 from bs4 import BeautifulSoup
@@ -82,11 +84,24 @@ USER_AGENT_HEAD = "User-Agent"
 PTT_OVER_18_HEADER = {"cookie": "over18=1"}
 
 
+class CustomEncoder(json.JSONEncoder):
+    def encode(self, o):
+        if isinstance(o, dict) and len(o) <= 2:
+            return (
+                "{" + ", ".join(f'"{k}": {json.dumps(v)}' for k, v in o.items()) + "}"
+            )
+        else:
+            return super().encode(o)
+
+
 class CrawlerHW:
     ARTICLES_FILE_NAME = "articles.jsonl"
     POPULAR_ARTICLES_FILE_NAME = "popular_articles.jsonl"
 
     ERROR_INPUT_MESSAGE = "please input command -> crawl, push <start_date> <end_date>, popular <start_date> <end_date>, keyword <start_date> <end_date> <keyword>"
+
+    FIRST_TEN = 10
+    CHUNK_SIZE = 200
 
     def __init__(self) -> None:
         pass
@@ -405,7 +420,7 @@ class CrawlerHW:
                 {
                     "like_boo_type": "first",
                     "body": lambda x: list(x),
-                    "cnt": "sum",
+                    "count": "sum",
                 }
             )
             .reset_index()
@@ -427,7 +442,10 @@ class CrawlerHW:
             span_item = [thing.string for thing in item.find_all("span")]
             span_item = [str(thing).strip() for thing in span_item]
 
-            ip, date_str, time_str = span_item[3].split(" ")
+            split_res = span_item[3].split(" ")
+            ip, date_str, time_str = "", "", ""
+            if len(split_res) == 3:
+                ip, date_str, time_str = split_res
 
             return {
                 "like_boo_type": span_item[0],
@@ -440,7 +458,7 @@ class CrawlerHW:
                         "time": time_str,
                     }
                 ],
-                "cnt": 1,
+                "count": 1,
             }
 
         push_list = soup.find_all("div", class_="push")
@@ -475,13 +493,18 @@ class CrawlerHW:
         page_dict = CrawlerHW.page_to_simple_dict(
             page_response.text, func_list=[CrawlerHW.get_like_boo_count_dict]
         )
-        print(url)
-        print(page_dict)
+        print(f"Process url:{url}", end="\r")
 
-        return
+        return {
+            "like_table": page_dict["like_table"],
+            "boo_table": page_dict["boo_table"],
+            "mid_table": page_dict["mid_table"],
+        }
 
     async def push(self, client: httpx.AsyncClient, date_start: str, date_end: str):
         # make input to datetime
+        file_name = f"push_{date_start}_{date_end}.json"
+
         date = [f"{SEARCH_YEAR}-{item}" for item in [date_start, date_end]]
         date = pd.to_datetime(date, format="%Y-%m%d").strftime("%Y-%m-%d")
         date_start, date_end = date
@@ -489,6 +512,7 @@ class CrawlerHW:
         print(f"Search range: {date_start} to {date_end}")
 
         # load jsonl to pd.DataFrame
+        print("load file...")
         with open(CrawlerHW.ARTICLES_FILE_NAME, mode="r", encoding="utf-8") as f:
             data_list = f.readlines()
 
@@ -507,8 +531,54 @@ class CrawlerHW:
         page_tasks = [
             self.craw_page(item["url"], client) for _, item in sub_table.iterrows()
         ]
+        print("Crawling...")
 
-        tasks_result = await asyncio.gather(*page_tasks)
+        # tasks_result = await asyncio.gather(*page_tasks)  # , unit="page"
+        chunk_task = [
+            page_tasks[i : i + CrawlerHW.CHUNK_SIZE]
+            for i in range(0, len(page_tasks), CrawlerHW.CHUNK_SIZE)
+        ]
+        tasks_result = []
+        for chunk_pack in chunk_task:
+            result_arr = await asyncio.gather(*chunk_pack)
+            tasks_result.extend(result_arr)
+
+        print("\nProcessing...")
+
+        def to_big_table(key: str, table: pd.DataFrame) -> pd.DataFrame:
+            "collect all table and take out empty table and return the table is sorted"
+            big_table = [item[key] for item in table if not item[key].empty]
+            big_table = pd.concat(big_table, ignore_index=True)
+            big_table = CrawlerHW.group_data_by_user_name(big_table)
+            big_table = big_table.sort_values(
+                by=["count", "user_id"], ascending=[False, False]
+            )
+
+            return big_table
+
+        def table_to_dict(type_: str, table: pd.DataFrame) -> dict:
+            table = table.drop(columns=["like_boo_type", "body"])
+            dict_list = table.to_dict("records")
+            # first 10
+            total = len(table)
+            top_10 = dict_list[: CrawlerHW.FIRST_TEN]
+
+            return {type_: {"total": total, "top10": top_10}}
+
+        like_total_table = to_big_table("like_table", tasks_result)
+        boo_total_table = to_big_table("boo_table", tasks_result)
+        mid_total_table = to_big_table("mid_table", tasks_result)
+
+        like_total_dict = table_to_dict("push", like_total_table)
+        boo_total_dict = table_to_dict("boo", boo_total_table)
+        mid_total_dict = table_to_dict("mid", mid_total_table)
+
+        display_dict = like_total_dict | boo_total_dict
+
+        with open(file_name, mode="w") as f:
+            json.dump(display_dict, f, cls=CustomEncoder, indent=4, ensure_ascii=False)
+
+        print(f"File save in: {file_name}")
 
         return
 
