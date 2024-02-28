@@ -3,6 +3,9 @@ import json
 import random as rd
 import time
 import sys
+from typing import Callable
+from functools import reduce
+import pandas as pd
 
 import httpx
 from bs4 import BeautifulSoup
@@ -90,7 +93,7 @@ class CrawlerHW:
 
     # static function
     @staticmethod
-    def page_to_simple_dict(html_str: str) -> dict:
+    def page_to_simple_dict(html_str: str, func_list: list[Callable] = None) -> dict:
         """
         format like
         '作者': 'ReiKuromiya (ReiKuromiya)',
@@ -176,6 +179,12 @@ class CrawlerHW:
                 "image_link": image_link,
             }
         )
+
+        if func_list is not None:
+            addition_dict_list = reduce(
+                lambda a, b: a | b, [func(soup) for func in func_list]
+            )
+            page_data |= addition_dict_list
 
         return page_data
 
@@ -383,8 +392,88 @@ class CrawlerHW:
 
         return
 
+    @staticmethod
+    def group_data_by_user_name(df: pd.DataFrame) -> pd.DataFrame:
+        return (
+            df.groupby("user_id")
+            .agg(
+                {
+                    "like_boo_type": "first",
+                    "body": lambda x: list(x),
+                    "cnt": "sum",
+                }
+            )
+            .reset_index()
+        )
+
+    @staticmethod
+    def get_like_boo_count_dict(soup: BeautifulSoup) -> dict:
+        """_summary_
+        for push function (addition for page_to_simple_dict function)
+        Args:
+            soup (BeautifulSoup): html obj
+
+        Returns:
+            dict: "page_comment_table" , pd.DataFrame
+        """
+
+        def push_list_to_dict(item: BeautifulSoup) -> dict:
+
+            span_item = [thing.string for thing in item.find_all("span")]
+            span_item = [str(thing).strip() for thing in span_item]
+
+            ip, date_str, time_str = span_item[3].split(" ")
+
+            return {
+                "like_boo_type": span_item[0],
+                "user_id": span_item[1],
+                "comment": span_item[2].replace(":", "").strip(),
+                "ip": ip,
+                "date": date_str,
+                "time": time_str,
+            }
+
+        push_list = soup.find_all("div", class_="push")
+
+        all_comment = [push_list_to_dict(item=item) for item in push_list]
+
+        like_list = list(filter(lambda x: x["like_boo_type"] == "推", all_comment))
+        boo_list = list(filter(lambda x: x["like_boo_type"] == "噓", all_comment))
+        mid_list = list(filter(lambda x: x["like_boo_type"] == "→", all_comment))
+
+        like_table = pd.DataFrame(like_list)
+        boo_table = pd.DataFrame(boo_list)
+        mid_table = pd.DataFrame(mid_list)
+
+        like_table = CrawlerHW.group_data_by_user_name(like_table)
+        boo_table = CrawlerHW.group_data_by_user_name(boo_table)
+        mid_table = CrawlerHW.group_data_by_user_name(mid_table)
+
+        return {
+            "like_table": like_table,
+            "boo_table": boo_table,
+            "mid_table": mid_table,
+        }
+
     async def push(self, date_start: str, date_end: str):
-        print(date_start, date_end)
+        # make input to datetime
+        date = [f"{SEARCH_YEAR}-{item}" for item in [date_start, date_end]]
+        date = pd.to_datetime(date, format="%Y-%m%d").strftime("%Y-%m-%d")
+        date_start, date_end = date
+
+        print(f"Search range: {date_start} to {date_end}")
+
+        # load jsonl to pd.DataFrame
+        with open(CrawlerHW.ARTICLES_FILE_NAME, mode="r", encoding="utf-8") as f:
+            data_list = f.readlines()
+
+        data_list = [json.loads(item) for item in data_list]
+        data_df = pd.DataFrame(data_list)
+
+        data_df["date"] = [f"{SEARCH_YEAR}-{item}" for item in data_df["date"]]
+        data_df["date"] = pd.to_datetime(data_df["date"], format="%Y-%m%d")
+        print(data_df)
+        data_df.to_csv("sample.csv")
         return
 
     async def run(self):
