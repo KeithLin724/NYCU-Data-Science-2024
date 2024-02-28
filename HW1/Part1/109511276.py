@@ -1,19 +1,16 @@
 import asyncio
 import json
 import random as rd
-import time
 import sys
-from typing import Callable
+import time
 from functools import reduce
-import pandas as pd
-from tqdm.asyncio import tqdm
-from pprint import pformat
+from typing import Callable
 
 import httpx
+import pandas as pd
 from bs4 import BeautifulSoup
 from rich import print
-
-# from fake_useragent import UserAgent
+from tqdm.asyncio import tqdm
 
 SAMPLE_URL = "https://www.ptt.cc/bbs/Beauty/M.1672503968.A.5B5.html"
 START_URL = "https://www.ptt.cc/bbs/Beauty/index3662.html"
@@ -538,10 +535,9 @@ class CrawlerHW:
             page_tasks[i : i + CrawlerHW.CHUNK_SIZE]
             for i in range(0, len(page_tasks), CrawlerHW.CHUNK_SIZE)
         ]
-        tasks_result = []
-        for chunk_pack in chunk_task:
-            result_arr = await asyncio.gather(*chunk_pack)
-            tasks_result.extend(result_arr)
+
+        tasks_result = [await asyncio.gather(*chunk_pack) for chunk_pack in chunk_task]
+        tasks_result = sum(tasks_result, [])
 
         print("\nProcessing...")
 
