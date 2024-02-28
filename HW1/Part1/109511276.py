@@ -286,7 +286,7 @@ class CrawlerHW:
 
     # main function
 
-    async def craw_item(self, small_page_dict: dict, client: httpx.AsyncClient):
+    async def craw_page_by_dict(self, small_page_dict: dict, client: httpx.AsyncClient):
         "save file(2) and return is in 2023"
         # make like a human
         await asyncio.sleep(CrawlerHW.get_random_wait_time())
@@ -337,7 +337,9 @@ class CrawlerHW:
 
             small_page: list[dict] = recommend_simple_dict["Body"]
 
-            small_page_tasks = [self.craw_item(item, client) for item in small_page]
+            small_page_tasks = [
+                self.craw_page_by_dict(item, client) for item in small_page
+            ]
 
             # run small page
             small_page_tasks_result = await asyncio.gather(*small_page_tasks)
@@ -394,6 +396,9 @@ class CrawlerHW:
 
     @staticmethod
     def group_data_by_user_name(df: pd.DataFrame) -> pd.DataFrame:
+        if df.empty:
+            return pd.DataFrame()
+
         return (
             df.groupby("user_id")
             .agg(
@@ -427,13 +432,19 @@ class CrawlerHW:
             return {
                 "like_boo_type": span_item[0],
                 "user_id": span_item[1],
-                "comment": span_item[2].replace(":", "").strip(),
-                "ip": ip,
-                "date": date_str,
-                "time": time_str,
+                "body": [
+                    {
+                        "comment": span_item[2].replace(":", "").strip(),
+                        "ip": ip,
+                        "date": date_str,
+                        "time": time_str,
+                    }
+                ],
+                "cnt": 1,
             }
 
         push_list = soup.find_all("div", class_="push")
+        # print(push_list)
 
         all_comment = [push_list_to_dict(item=item) for item in push_list]
 
@@ -455,7 +466,21 @@ class CrawlerHW:
             "mid_table": mid_table,
         }
 
-    async def push(self, date_start: str, date_end: str):
+    async def craw_page(self, url: str, client: httpx.AsyncClient):
+        # make like a human
+        await asyncio.sleep(CrawlerHW.get_random_wait_time())
+
+        page_response = await client.get(url, headers=CrawlerHW.get_header())
+
+        page_dict = CrawlerHW.page_to_simple_dict(
+            page_response.text, func_list=[CrawlerHW.get_like_boo_count_dict]
+        )
+        print(url)
+        print(page_dict)
+
+        return
+
+    async def push(self, client: httpx.AsyncClient, date_start: str, date_end: str):
         # make input to datetime
         date = [f"{SEARCH_YEAR}-{item}" for item in [date_start, date_end]]
         date = pd.to_datetime(date, format="%Y-%m%d").strftime("%Y-%m-%d")
@@ -472,8 +497,19 @@ class CrawlerHW:
 
         data_df["date"] = [f"{SEARCH_YEAR}-{item}" for item in data_df["date"]]
         data_df["date"] = pd.to_datetime(data_df["date"], format="%Y-%m%d")
-        print(data_df)
-        data_df.to_csv("sample.csv")
+
+        # get range of table
+        sub_table = data_df[
+            (data_df["date"] >= date_start) & (data_df["date"] <= date_end)
+        ]
+
+        # make task
+        page_tasks = [
+            self.craw_page(item["url"], client) for _, item in sub_table.iterrows()
+        ]
+
+        tasks_result = await asyncio.gather(*page_tasks)
+
         return
 
     async def run(self):
@@ -490,7 +526,7 @@ class CrawlerHW:
                 await self.crawl(client)
 
             elif args_list[0] == "push":
-                await self.push(args_list[1], args_list[2])
+                await self.push(client, args_list[1], args_list[2])
 
             end_run_time = time.time()
 
