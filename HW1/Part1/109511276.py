@@ -576,7 +576,8 @@ class CrawlerHW:
         display_dict = like_total_dict | boo_total_dict
 
         with open(file_name, mode="w") as f:
-            json.dump(display_dict, f, cls=CustomEncoder, indent=4, ensure_ascii=False)
+            # take out cls=CustomEncoder,
+            json.dump(display_dict, f, indent=4, ensure_ascii=False)
 
         print(f"File save in: {file_name}")
 
