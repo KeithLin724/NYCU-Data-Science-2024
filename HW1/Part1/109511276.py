@@ -132,9 +132,6 @@ class CrawlerHW:
                 "Time": detail_date[-2],
             }
 
-        # header = {"cookie": "over18=1"}
-        # result = httpx.get(url=url, headers=header)
-
         soup = BeautifulSoup(html_str, "html.parser")
 
         # get main data
