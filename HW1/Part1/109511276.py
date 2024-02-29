@@ -269,6 +269,35 @@ class CrawlerHW:
         ]
         return "".join(element)
 
+    @staticmethod
+    def dict_save_to_file(save_dict: dict, file_name: str):
+        with open(file_name, mode="w", encoding="utf-8") as f:
+            json.dump(save_dict, f, indent=4, ensure_ascii=False)
+        return
+
+    @staticmethod
+    def get_sub_table(
+        date_start: pd.DatetimeIndex, date_end: pd.DatetimeIndex, table: pd.DataFrame
+    ) -> pd.DataFrame:
+        return table[(table["date"] >= date_start) & (table["date"] <= date_end)]
+
+    @staticmethod
+    async def gather(*task):
+        "make like asyncio"
+
+        ## cut to chunk
+        chunk_task = [
+            task[i : i + CrawlerHW.CHUNK_SIZE]
+            for i in range(0, len(task), CrawlerHW.CHUNK_SIZE)
+        ]
+
+        tasks_result = [await asyncio.gather(*chunk_pack) for chunk_pack in chunk_task]
+        # add to result
+        tasks_result = sum(tasks_result, [])
+        return tasks_result
+
+    ###############################################################
+
     # main function
 
     async def craw_page_by_dict(self, small_page_dict: dict, client: httpx.AsyncClient):
@@ -505,9 +534,7 @@ class CrawlerHW:
         data_df = CrawlerHW.load_data_frame_from_file(CrawlerHW.ARTICLES_FILE_NAME)
 
         # get range of table
-        sub_table = data_df[
-            (data_df["date"] >= date_start) & (data_df["date"] <= date_end)
-        ]
+        sub_table = CrawlerHW.get_sub_table(date_start, date_end, data_df)
 
         # make task
         page_tasks = [
@@ -516,13 +543,7 @@ class CrawlerHW:
         print("Crawling...")
 
         # tasks_result = await asyncio.gather(*page_tasks)  # , unit="page"
-        chunk_task = [
-            page_tasks[i : i + CrawlerHW.CHUNK_SIZE]
-            for i in range(0, len(page_tasks), CrawlerHW.CHUNK_SIZE)
-        ]
-
-        tasks_result = [await asyncio.gather(*chunk_pack) for chunk_pack in chunk_task]
-        tasks_result = sum(tasks_result, [])
+        tasks_result = await CrawlerHW.gather(*page_tasks)
 
         print("\nProcessing...")
 
@@ -555,9 +576,7 @@ class CrawlerHW:
 
         display_dict = like_total_dict | boo_total_dict
 
-        with open(file_name, mode="w") as f:
-            # take out cls=CustomEncoder,
-            json.dump(display_dict, f, indent=4, ensure_ascii=False)
+        CrawlerHW.dict_save_to_file(display_dict, file_name)
 
         print(f"File save in: {file_name}")
 
@@ -616,9 +635,7 @@ class CrawlerHW:
             CrawlerHW.POPULAR_ARTICLES_FILE_NAME
         )
 
-        sub_table = data_df[
-            (data_df["date"] >= date_start) & (data_df["date"] <= date_end)
-        ]
+        sub_table = CrawlerHW.get_sub_table(date_start, date_end, data_df)
 
         popular_page_tasks = [
             self.craw_popular_page(item["url"], client)
@@ -626,15 +643,8 @@ class CrawlerHW:
         ]
         print("Crawling...")
         # cut to small chunks
-        chunk_task = [
-            popular_page_tasks[i : i + CrawlerHW.CHUNK_SIZE]
-            for i in range(0, len(popular_page_tasks), CrawlerHW.CHUNK_SIZE)
-        ]
 
-        popular_page_tasks_result = [
-            await asyncio.gather(*chunk_pack) for chunk_pack in chunk_task
-        ]
-        popular_page_tasks_result = sum(popular_page_tasks_result, [])
+        popular_page_tasks_result = await CrawlerHW.gather(*popular_page_tasks)
 
         print("\nProcessing...")
 
@@ -646,9 +656,7 @@ class CrawlerHW:
             "image_urls": image_urls,
         }
 
-        with open(file_name, mode="w", encoding="utf-8") as f:
-            # take out cls=CustomEncoder,
-            json.dump(result_dict, f, indent=4, ensure_ascii=False)
+        CrawlerHW.dict_save_to_file(result_dict, file_name)
 
         print(f"File save in {file_name}")
 
@@ -670,7 +678,7 @@ class CrawlerHW:
         self, url: str, keyword: str, client: httpx.AsyncClient
     ):
         await asyncio.sleep(CrawlerHW.get_random_wait_time())
-        # print(url, keyword)
+
         page_response = await client.get(url, headers=CrawlerHW.get_header())
 
         page_dict = CrawlerHW.page_to_simple_dict(
@@ -702,30 +710,20 @@ class CrawlerHW:
         print("Loading file ...")
         data_df = CrawlerHW.load_data_frame_from_file(CrawlerHW.ARTICLES_FILE_NAME)
 
-        sub_table = data_df[
-            (data_df["date"] >= date_start) & (data_df["date"] <= date_end)
-        ]
+        sub_table = CrawlerHW.get_sub_table(date_start, date_end, data_df)
 
         keyword_page_dict = [
             self.craw_page_by_keyword(item["url"], keyword_str, client)
             for _, item in sub_table.iterrows()
         ]
 
-        chunk_tasks = [
-            keyword_page_dict[i : i + CrawlerHW.CHUNK_SIZE]
-            for i in range(0, len(keyword_page_dict), CrawlerHW.CHUNK_SIZE)
-        ]
-
-        tasks_result = [await asyncio.gather(*chunk_pack) for chunk_pack in chunk_tasks]
-        tasks_result = sum(tasks_result, [])
+        tasks_result = await CrawlerHW.gather(*keyword_page_dict)
 
         print("\nProcessing...")
         all_image_urls = sum([item for item in tasks_result if item is not None], [])
         result_dict = {"image_urls": all_image_urls}
 
-        with open(file_name, mode="w", encoding="utf-8") as f:
-            # take out cls=CustomEncoder,
-            json.dump(result_dict, f, indent=4, ensure_ascii=False)
+        CrawlerHW.dict_save_to_file(result_dict, file_name)
 
         print(f"File save in {file_name}")
 
