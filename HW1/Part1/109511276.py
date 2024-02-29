@@ -436,9 +436,9 @@ class CrawlerHW:
 
         all_comment = [push_list_to_dict(item=item) for item in push_list]
 
-        like_list = list(filter(lambda x: x["like_boo_type"] == "推", all_comment))
-        boo_list = list(filter(lambda x: x["like_boo_type"] == "噓", all_comment))
-        mid_list = list(filter(lambda x: x["like_boo_type"] == "→", all_comment))
+        like_list = [item for item in all_comment if item["like_boo_type"] == "推"]
+        boo_list = [item for item in all_comment if item["like_boo_type"] == "噓"]
+        mid_list = [item for item in all_comment if item["like_boo_type"] == "→"]
 
         like_table = pd.DataFrame(like_list)
         boo_table = pd.DataFrame(boo_list)
