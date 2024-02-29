@@ -282,6 +282,16 @@ class CrawlerHW:
         return table[(table["date"] >= date_start) & (table["date"] <= date_end)]
 
     @staticmethod
+    def build_task_from_table(
+        func: Callable,
+        table: pd.DataFrame,
+        column_name: str,
+        client: httpx.AsyncClient,
+        **kw,
+    ):
+        return [func(item[column_name], client, **kw) for _, item in table.iterrows()]
+
+    @staticmethod
     async def gather(*task):
         "make like asyncio"
 
@@ -537,9 +547,13 @@ class CrawlerHW:
         sub_table = CrawlerHW.get_sub_table(date_start, date_end, data_df)
 
         # make task
-        page_tasks = [
-            self.craw_page(item["url"], client) for _, item in sub_table.iterrows()
-        ]
+        page_tasks = CrawlerHW.build_task_from_table(
+            func=self.craw_page,
+            table=sub_table,
+            column_name="url",
+            client=client,
+        )
+
         print("Crawling...")
 
         # tasks_result = await asyncio.gather(*page_tasks)  # , unit="page"
@@ -637,12 +651,14 @@ class CrawlerHW:
 
         sub_table = CrawlerHW.get_sub_table(date_start, date_end, data_df)
 
-        popular_page_tasks = [
-            self.craw_popular_page(item["url"], client)
-            for _, item in sub_table.iterrows()
-        ]
+        popular_page_tasks = CrawlerHW.build_task_from_table(
+            func=self.craw_popular_page,
+            table=sub_table,
+            column_name="url",
+            client=client,
+        )
+
         print("Crawling...")
-        # cut to small chunks
 
         popular_page_tasks_result = await CrawlerHW.gather(*popular_page_tasks)
 
@@ -674,9 +690,7 @@ class CrawlerHW:
 
         return {"is_can_use": bool(index_end != -1), "body_content": body_text}
 
-    async def craw_page_by_keyword(
-        self, url: str, keyword: str, client: httpx.AsyncClient
-    ):
+    async def craw_page_by_keyword(self, url: str, client: httpx.AsyncClient, **kw):
         await asyncio.sleep(CrawlerHW.get_random_wait_time())
 
         page_response = await client.get(url, headers=CrawlerHW.get_header())
@@ -692,7 +706,11 @@ class CrawlerHW:
         if not page_dict["is_can_use"]:
             return None
         print(f"Process url:{url}", end="\r")
-        return page_dict["image_link"] if keyword in page_dict["body_content"] else None
+        return (
+            page_dict["image_link"]
+            if kw["kw"]["keyword"] in page_dict["body_content"]
+            else None
+        )
 
     async def keyword(
         self,
@@ -712,10 +730,13 @@ class CrawlerHW:
 
         sub_table = CrawlerHW.get_sub_table(date_start, date_end, data_df)
 
-        keyword_page_dict = [
-            self.craw_page_by_keyword(item["url"], keyword_str, client)
-            for _, item in sub_table.iterrows()
-        ]
+        keyword_page_dict = CrawlerHW.build_task_from_table(
+            func=self.craw_page_by_keyword,
+            table=sub_table,
+            column_name="url",
+            client=client,
+            kw={"keyword": keyword_str},
+        )
 
         tasks_result = await CrawlerHW.gather(*keyword_page_dict)
 
