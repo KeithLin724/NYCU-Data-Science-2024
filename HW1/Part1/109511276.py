@@ -98,7 +98,7 @@ class CrawlerHW:
     ERROR_INPUT_MESSAGE = "please input command -> crawl, push <start_date> <end_date>, popular <start_date> <end_date>, keyword <start_date> <end_date> <keyword>"
 
     FIRST_TEN = 10
-    CHUNK_SIZE = 200
+    CHUNK_SIZE = 100
 
     def __init__(self) -> None:
         pass
@@ -163,34 +163,7 @@ class CrawlerHW:
             process_result_dict = {item[0]: item[1] for item in process_text}
             header_dict |= process_result_dict
 
-        # image src
-        images_catch_link = body_data.find_all("div", class_="richcontent")
-
-        images_catch_link = [
-            item.get("src")
-            for image in images_catch_link
-            if (item := image.find("img"))
-        ]
-
-        # image link lists
-        image_link = body_data.find_all("a")
-        image_link = [
-            link_str
-            for link in image_link
-            if any(
-                substring in (link_str := str(link.string))
-                for substring in [".png", ".jpg", "jpeg", ".gif"]
-            )
-        ]
-
-        page_data = (
-            header_dict
-            | to_detail_date(header_dict["時間"])
-            | {
-                "image_catch_list": images_catch_link,
-                "image_link": image_link,
-            }
-        )
+        page_data = header_dict | to_detail_date(header_dict["時間"])
 
         if func_list is not None:
             addition_dict_list = reduce(
@@ -498,26 +471,38 @@ class CrawlerHW:
             "mid_table": page_dict["mid_table"],
         }
 
+    @staticmethod
+    def to_pd_date(*date_str):
+        date = [f"{SEARCH_YEAR}-{item}" for item in date_str]
+        date = pd.to_datetime(date, format="%Y-%m%d").strftime("%Y-%m-%d")
+        return date
+
+    @staticmethod
+    def load_data_frame_from_file(file_name: str) -> pd.DataFrame:
+        with open(file_name, mode="r", encoding="utf-8") as f:
+            data_list = f.readlines()
+
+        # line of json
+        data_list = [json.loads(item) for item in data_list]
+        data_df = pd.DataFrame(data_list)
+
+        # make date is pd.date_time
+        data_df["date"] = [f"{SEARCH_YEAR}-{item}" for item in data_df["date"]]
+        data_df["date"] = pd.to_datetime(data_df["date"], format="%Y-%m%d")
+        return data_df
+
     async def push(self, client: httpx.AsyncClient, date_start: str, date_end: str):
         # make input to datetime
         file_name = f"push_{date_start}_{date_end}.json"
 
-        date = [f"{SEARCH_YEAR}-{item}" for item in [date_start, date_end]]
-        date = pd.to_datetime(date, format="%Y-%m%d").strftime("%Y-%m-%d")
-        date_start, date_end = date
+        date_start, date_end = CrawlerHW.to_pd_date(date_start, date_end)
 
         print(f"Search range: {date_start} to {date_end}")
 
         # load jsonl to pd.DataFrame
-        print("load file...")
-        with open(CrawlerHW.ARTICLES_FILE_NAME, mode="r", encoding="utf-8") as f:
-            data_list = f.readlines()
+        print("Loading file...")
 
-        data_list = [json.loads(item) for item in data_list]
-        data_df = pd.DataFrame(data_list)
-
-        data_df["date"] = [f"{SEARCH_YEAR}-{item}" for item in data_df["date"]]
-        data_df["date"] = pd.to_datetime(data_df["date"], format="%Y-%m%d")
+        data_df = CrawlerHW.load_data_frame_from_file(CrawlerHW.ARTICLES_FILE_NAME)
 
         # get range of table
         sub_table = data_df[
@@ -578,6 +563,97 @@ class CrawlerHW:
 
         return
 
+    @staticmethod
+    def get_images_from_page(soup: BeautifulSoup) -> dict:
+        "for get page image line (a addition function for page to simple dict function)"
+        body_data = soup.find("div", class_="bbs-screen bbs-content", id="main-content")
+        # image src
+        images_catch_link = body_data.find_all("div", class_="richcontent")
+
+        images_catch_link = [
+            item.get("src")
+            for image in images_catch_link
+            if (item := image.find("img"))
+        ]
+
+        # image link lists
+        image_link = body_data.find_all("a")
+        image_link = [
+            link_str
+            for link in image_link
+            if any(
+                substring in (link_str := str(link.string))
+                for substring in [".png", ".jpg", "jpeg", ".gif"]
+            )
+        ]
+        return {
+            "image_catch_list": images_catch_link,
+            "image_link": image_link,
+        }
+
+    async def craw_popular_page(self, url: str, client: httpx.AsyncClient):
+        await asyncio.sleep(CrawlerHW.get_random_wait_time())
+        popular_page_response = await client.get(url, headers=CrawlerHW.get_header())
+
+        page_dict = CrawlerHW.page_to_simple_dict(
+            popular_page_response.text,
+            func_list=[CrawlerHW.get_images_from_page],
+        )
+        print(f"Process url:{url}", end="\r")
+        return {
+            "image_catch_list": page_dict["image_catch_list"],
+            "image_link": page_dict["image_link"],
+        }
+
+    async def popular(self, client: httpx.AsyncClient, date_start: str, date_end: str):
+        file_name = f"popular_{date_start}_{date_end}.json"
+        date_start, date_end = CrawlerHW.to_pd_date(date_start, date_end)
+
+        print(f"Search range: {date_start} to {date_end}")
+        print("Loading file ...")
+
+        data_df = CrawlerHW.load_data_frame_from_file(
+            CrawlerHW.POPULAR_ARTICLES_FILE_NAME
+        )
+
+        sub_table = data_df[
+            (data_df["date"] >= date_start) & (data_df["date"] <= date_end)
+        ]
+
+        popular_page_tasks = [
+            self.craw_popular_page(item["url"], client)
+            for _, item in sub_table.iterrows()
+        ]
+        print("Crawling...")
+        # cut to small chunks
+        chunk_task = [
+            popular_page_tasks[i : i + CrawlerHW.CHUNK_SIZE]
+            for i in range(0, len(popular_page_tasks), CrawlerHW.CHUNK_SIZE)
+        ]
+
+        popular_page_tasks_result = [
+            await asyncio.gather(*chunk_pack) for chunk_pack in chunk_task
+        ]
+        popular_page_tasks_result = sum(popular_page_tasks_result, [])
+
+        print("\nProcessing...")
+
+        image_urls = [item["image_link"] for item in popular_page_tasks_result]
+        image_urls = sum(image_urls, [])
+
+        result_dict = {
+            "number_of_popular_articles": len(sub_table),
+            "image_urls": image_urls,
+        }
+
+        with open(file_name, mode="w") as f:
+            # take out cls=CustomEncoder,
+            json.dump(result_dict, f, indent=4, ensure_ascii=False)
+
+        print(f"File save in {file_name}")
+
+        return
+
     async def run(self):
         if len(sys.argv) < 2:
             print(CrawlerHW.ERROR_INPUT_MESSAGE)
@@ -593,6 +669,8 @@ class CrawlerHW:
 
             elif args_list[0] == "push":
                 await self.push(client, args_list[1], args_list[2])
+            elif args_list[0] == "popular":
+                await self.popular(client, args_list[1], args_list[2])
 
             end_run_time = time.time()
 
