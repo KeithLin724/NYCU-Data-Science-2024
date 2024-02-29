@@ -1,7 +1,7 @@
 {
     "push": {
         "total": 690,
-        "top_10": [
+        "top10": [
             {
                 "user_id": "maxxxxxx",
                 "count": 6
@@ -46,7 +46,7 @@
     },
     "boo": {
         "total": 198,
-        "top_10": [
+        "top10": [
             {
                 "user_id": "QVQ9487",
                 "count": 5
