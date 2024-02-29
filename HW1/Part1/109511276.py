@@ -646,7 +646,84 @@ class CrawlerHW:
             "image_urls": image_urls,
         }
 
-        with open(file_name, mode="w") as f:
+        with open(file_name, mode="w", encoding="utf-8") as f:
+            # take out cls=CustomEncoder,
+            json.dump(result_dict, f, indent=4, ensure_ascii=False)
+
+        print(f"File save in {file_name}")
+
+        return
+
+    @staticmethod
+    def get_body_content(soup: BeautifulSoup) -> dict:
+        body_data = soup.find("div", class_="bbs-screen bbs-content", id="main-content")
+
+        body_text = body_data.text.strip()
+
+        index_end = body_text.find("※ 發信站")
+        # must have ※ 發信站
+        body_text = body_text[:index_end]
+
+        return {"is_can_use": bool(index_end != -1), "body_content": body_text}
+
+    async def craw_page_by_keyword(
+        self, url: str, keyword: str, client: httpx.AsyncClient
+    ):
+        await asyncio.sleep(CrawlerHW.get_random_wait_time())
+        # print(url, keyword)
+        page_response = await client.get(url, headers=CrawlerHW.get_header())
+
+        page_dict = CrawlerHW.page_to_simple_dict(
+            page_response.text,
+            func_list=[
+                CrawlerHW.get_body_content,
+                CrawlerHW.get_images_from_page,
+            ],
+        )
+
+        if not page_dict["is_can_use"]:
+            return None
+        print(f"Process url:{url}", end="\r")
+        return page_dict["image_link"] if keyword in page_dict["body_content"] else None
+
+    async def keyword(
+        self,
+        client: httpx.AsyncClient,
+        date_start: str,
+        date_end: str,
+        keyword_str: str,
+    ):
+        keyword_str = keyword_str.strip()
+        file_name = f"keyword_{date_start}_{date_end}_{keyword_str}.json"
+
+        date_start, date_end = CrawlerHW.to_pd_date(date_start, date_end)
+        print(f"Search range: {date_start} to {date_end}")
+
+        print("Loading file ...")
+        data_df = CrawlerHW.load_data_frame_from_file(CrawlerHW.ARTICLES_FILE_NAME)
+
+        sub_table = data_df[
+            (data_df["date"] >= date_start) & (data_df["date"] <= date_end)
+        ]
+
+        keyword_page_dict = [
+            self.craw_page_by_keyword(item["url"], keyword_str, client)
+            for _, item in sub_table.iterrows()
+        ]
+
+        chunk_tasks = [
+            keyword_page_dict[i : i + CrawlerHW.CHUNK_SIZE]
+            for i in range(0, len(keyword_page_dict), CrawlerHW.CHUNK_SIZE)
+        ]
+
+        tasks_result = [await asyncio.gather(*chunk_pack) for chunk_pack in chunk_tasks]
+        tasks_result = sum(tasks_result, [])
+
+        print("\nProcessing...")
+        all_image_urls = sum([item for item in tasks_result if item is not None], [])
+        result_dict = {"image_urls": all_image_urls}
+
+        with open(file_name, mode="w", encoding="utf-8") as f:
             # take out cls=CustomEncoder,
             json.dump(result_dict, f, indent=4, ensure_ascii=False)
 
@@ -671,6 +748,9 @@ class CrawlerHW:
                 await self.push(client, args_list[1], args_list[2])
             elif args_list[0] == "popular":
                 await self.popular(client, args_list[1], args_list[2])
+
+            elif args_list[0] == "keyword":
+                await self.keyword(client, args_list[1], args_list[2], args_list[3])
 
             end_run_time = time.time()
 
