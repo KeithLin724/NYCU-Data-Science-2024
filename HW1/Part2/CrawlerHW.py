@@ -15,6 +15,7 @@ from tqdm.asyncio import tqdm
 SAMPLE_URL = "https://www.ptt.cc/bbs/Beauty/M.1672503968.A.5B5.html"
 START_URL = "https://www.ptt.cc/bbs/Beauty/index3662.html"
 # START_URL = "https://www.ptt.cc/bbs/Beauty/index3827.html"
+# START_URL = "https://www.ptt.cc/bbs/Beauty/index3700.html"
 
 
 PTT_PREV_LINK = "https://www.ptt.cc"
@@ -90,6 +91,8 @@ class CrawlerHW:
     FIRST_TEN = 10
     CHUNK_SIZE = 100
 
+    TRAIN_DATA_JSONL_FILE = "tran_data.jsonl"
+
     def __init__(self) -> None:
         pass
 
@@ -149,6 +152,9 @@ class CrawlerHW:
             process_text = [item.split(":") for item in process_text]
             process_result_dict = {item[0]: item[1] for item in process_text}
             header_dict |= process_result_dict
+
+        # pd_time = pd.to_datetime(header_dict["時間"], format="%a %b %d %H:%M:%S %Y")
+        # header_dict |= {"pd_date": pd_time}
 
         page_data = header_dict | to_detail_date(header_dict["時間"])
 
@@ -737,7 +743,108 @@ class CrawlerHW:
 
         return
 
-    async def crawl_test_data(self):
+    async def crawl_page_for_train_data(
+        self, small_page_dict: dict, client: httpx.AsyncClient
+    ) -> dict:
+        await asyncio.sleep(CrawlerHW.get_random_wait_time())
+
+        page_url = CrawlerHW.to_full_link(small_page_dict["URL"])
+
+        page_html = await client.get(page_url, headers=CrawlerHW.get_header())
+        page_dict = CrawlerHW.page_to_simple_dict(
+            page_html.text,
+            func_list=[CrawlerHW.get_images_from_page],
+        )
+
+        format_dict = lambda image_link: {
+            "date": f"{page_dict['Year']}-{page_dict['Month']}-{page_dict['Day']}-{page_dict['Time']}",
+            "title": small_page_dict["Title"],
+            "author": small_page_dict["Author"],
+            "url": CrawlerHW.to_full_link(small_page_dict["URL"]),
+            "image_link": image_link,
+            "hotNumber": small_page_dict["HotNumber"],
+        }
+        # print(page_dict)
+
+        result_dict = {
+            "title": page_dict["標題"],
+            "author": small_page_dict["Author"],
+            "hotNumber": small_page_dict["HotNumber"],
+            "date": {
+                "Year": page_dict["Year"],
+                "Month": page_dict["Month"],
+                "Day": page_dict["Day"],
+                "Time": page_dict["Time"],
+            },
+            "image_catch_link": page_dict["image_catch_list"],
+            "image_link": page_dict["image_link"],
+            "to_jsonl_file": [format_dict(item) for item in page_dict["image_link"]],
+        }
+
+        return result_dict
+
+    async def crawl_testing_data(self, client: httpx.AsyncClient):
+        # run all page and get image -> save in jsonl -> and make csv
+
+        now_page_url = START_URL
+        in_range = True
+
+        # open file
+        with open(file=CrawlerHW.TRAIN_DATA_JSONL_FILE, mode="w") as f:
+            pass
+
+        while now_page_url != "":
+            # check is in 2023
+            if not in_range:
+                break
+
+            recommend_page = await client.get(
+                now_page_url, headers=CrawlerHW.get_header()
+            )
+
+            recommend_page_dict = CrawlerHW.recommend_page_to_simple_dict(
+                recommend_page.text
+            )
+
+            # print(recommend_page_dict)
+            small_page_dicts = recommend_page_dict["Body"]
+
+            # build job
+            small_page_tasks = [
+                self.crawl_page_for_train_data(small_page_dict, client)
+                for small_page_dict in small_page_dicts
+            ]
+
+            small_page_result = await CrawlerHW.gather(*small_page_tasks)
+
+            # save file
+            with open(
+                file=CrawlerHW.TRAIN_DATA_JSONL_FILE, mode="a", encoding="utf-8"
+            ) as f:
+                for page_item in small_page_result:
+                    if (year := page_item["date"]["Year"]) != "2023":
+                        if year == "2024":
+                            in_range = False
+                        continue
+
+                    to_jsonl_file_list = page_item["to_jsonl_file"]
+                    # save line by line
+                    for line_json in to_jsonl_file_list:
+                        json.dump(line_json, f, ensure_ascii=False)
+                        f.write("\n")
+
+            now_page_url = CrawlerHW.to_full_link(recommend_page_dict["Next"])
+            # break
+            print(
+                f"Crawling ... Date: {page_item['date']['Year']}/{page_item['date']['Month']}/{page_item['date']['Day']} Page: {now_page_url}",
+                end="\r",
+            )
+
+        print(
+            f"Crawl Finish Date: Date: {page_item['date']['Year']}/{page_item['date']['Month']}/{page_item['date']['Day']} Page: {now_page_url}"
+        )
+        print(f"File save in {CrawlerHW.TRAIN_DATA_JSONL_FILE}")
+
         return
 
     async def run(self):
@@ -767,3 +874,7 @@ class CrawlerHW:
             end_run_time = time.time()
 
             print(f"Run Time: {end_run_time - start_run_time}")
+
+
+if __name__ == "__main__":
+    asyncio.run(CrawlerHW().run())
