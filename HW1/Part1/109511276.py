@@ -13,7 +13,8 @@ from rich import print
 from tqdm.asyncio import tqdm
 
 SAMPLE_URL = "https://www.ptt.cc/bbs/Beauty/M.1672503968.A.5B5.html"
-START_URL = "https://www.ptt.cc/bbs/Beauty/index3662.html"
+# START_URL = "https://www.ptt.cc/bbs/Beauty/index3662.html"
+START_URL = "https://www.ptt.cc/bbs/Beauty/index.html"
 # START_URL = "https://www.ptt.cc/bbs/Beauty/index3827.html"
 
 
