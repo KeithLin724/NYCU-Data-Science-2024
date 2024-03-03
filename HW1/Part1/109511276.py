@@ -16,7 +16,7 @@ SAMPLE_URL = "https://www.ptt.cc/bbs/Beauty/M.1672503968.A.5B5.html"
 # START_URL = "https://www.ptt.cc/bbs/Beauty/index3662.html"
 START_URL = "https://www.ptt.cc/bbs/Beauty/index.html"
 # START_URL = "https://www.ptt.cc/bbs/Beauty/index3827.html"
-
+FIRST_PAGE_TIME = "2023-Jan-1-00:26:06"
 
 PTT_PREV_LINK = "https://www.ptt.cc"
 SEARCH_YEAR = "2023"
