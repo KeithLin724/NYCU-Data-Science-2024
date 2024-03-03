@@ -9,8 +9,8 @@ from typing import Callable
 import httpx
 import pandas as pd
 from bs4 import BeautifulSoup
-from rich import print
-from tqdm.asyncio import tqdm
+# from rich import print
+# from tqdm.asyncio import tqdm
 
 SAMPLE_URL = "https://www.ptt.cc/bbs/Beauty/M.1672503968.A.5B5.html"
 # START_URL = "https://www.ptt.cc/bbs/Beauty/index3662.html"
