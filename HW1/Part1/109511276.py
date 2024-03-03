@@ -9,8 +9,8 @@ from typing import Callable
 import httpx
 import pandas as pd
 from bs4 import BeautifulSoup
-from rich import print
-from tqdm.asyncio import tqdm
+# from rich import print
+# from tqdm.asyncio import tqdm
 
 SAMPLE_URL = "https://www.ptt.cc/bbs/Beauty/M.1672503968.A.5B5.html"
 # START_URL = "https://www.ptt.cc/bbs/Beauty/index3662.html"
@@ -161,7 +161,10 @@ class CrawlerHW:
             process_result_dict = {item[0]: item[1] for item in process_text}
             header_dict |= process_result_dict
 
-        page_data = header_dict | to_detail_date(header_dict["時間"])
+        detail_date = to_detail_date(header_dict["時間"])
+        # pd_time = to_pd_time(detail_date)
+
+        page_data = header_dict | detail_date
 
         if func_list is not None:
             addition_dict_list = reduce(
@@ -305,6 +308,69 @@ class CrawlerHW:
         return tasks_result
 
     ###############################################################
+    @staticmethod
+    def to_pd_time_from_dict(detail_date: dict) -> pd.Timestamp:
+        date_str = f"{detail_date.get('Year' , '')}-{detail_date.get('Month', '')}-{detail_date.get('Day', '')} {detail_date.get('Time', '')}"
+        return {"pd_time": pd.to_datetime(date_str)}
+    
+    @staticmethod
+    async def page_time_range(url: str, client: httpx.AsyncClient):
+        recommend_page_response = await client.get(url, headers=CrawlerHW.get_header())
+
+        page_dict = CrawlerHW.recommend_page_to_simple_dict(
+            recommend_page_response.content
+        )
+        page_body = page_dict["Body"]
+        full_link = lambda url: f"https://www.ptt.cc{url}"
+
+        # get recommend page top and bottom date
+        start_page_url, end_page_utl = (
+            full_link(page_body[0]["URL"]),
+            full_link(page_body[-1]["URL"]),
+        )
+
+        start_page_response, end_page_response = await asyncio.gather(
+            client.get(start_page_url, headers=CrawlerHW.get_header()),
+            client.get(end_page_utl, headers=CrawlerHW.get_header()),
+        )
+
+        start_page_dict = CrawlerHW.page_to_simple_dict(start_page_response.content)
+        end_page_dict = CrawlerHW.page_to_simple_dict(end_page_response.content)
+        
+        start_page_time_dict = CrawlerHW.to_pd_time_from_dict(start_page_dict)
+        end_page_time_dict = CrawlerHW.to_pd_time_from_dict(end_page_dict)
+
+        return [start_page_time_dict["pd_time"], end_page_time_dict["pd_time"]]
+
+    @staticmethod
+    async def find_page_by_time(page_time: str, client: httpx.AsyncClient):
+        "use binary search to find the start page"
+        target_page_time = pd.to_datetime(page_time)
+        to_ptt_index_url = lambda num: f"https://www.ptt.cc/bbs/Beauty/index{num}.html"
+        left, right = 1, 3999
+
+        while left <= right:
+            mid_number = (left + right) // 2
+            ptt_index_url = to_ptt_index_url(mid_number)
+
+            print(f"Now html: {ptt_index_url}", end="\r")
+
+            time_range = await CrawlerHW.page_time_range(ptt_index_url, client)
+
+            in_range = time_range[0] <= target_page_time <= time_range[-1]
+
+            # find range
+            if in_range:
+                return ptt_index_url
+
+            if target_page_time < time_range[0]:
+                right = mid_number - 1
+
+            elif target_page_time > time_range[-1]:
+                left = mid_number + 1
+        return ""
+
+    ###############################################################
 
     # main function
 
@@ -334,7 +400,10 @@ class CrawlerHW:
         "get the 2023 year ptt Beauty"
 
         "page by page to get the data"
-        now_page_url = START_URL
+
+        print("Find Start Page...")
+        now_page_url = await CrawlerHW.find_page_by_time(FIRST_PAGE_TIME, client)
+        print(f"\nStart Page: {now_page_url}")
         in_range = True
 
         with open(
