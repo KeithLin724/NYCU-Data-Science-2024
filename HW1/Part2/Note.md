@@ -50,3 +50,9 @@ ResNet-18: 虽然ResNet-18相对较大，但仍然是一种有效的轻量级模
 
 对于您的需求，我建议您首先尝试LeNet-5或MobileNet，这些模型都比较简单，适用于二分类任务，并且可以在CPU上快速运行。您可以在PyTorch的torchvision.models模块中找到这些模型的实现。
 ```
+
+# data set unbalance  
+# https://ithelp.ithome.com.tw/m/articles/10261413
+
+# torch sampler `torchsampler`
+# https://github.com/ufoym/imbalanced-dataset-sampler
