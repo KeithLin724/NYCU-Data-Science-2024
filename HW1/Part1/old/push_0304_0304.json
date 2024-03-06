@@ -1,0 +1,92 @@
+{
+    "push": {
+        "total": 264,
+        "top10": [
+            {
+                "user_id": "HsiangMing",
+                "count": 4
+            },
+            {
+                "user_id": "qqwwweee",
+                "count": 3
+            },
+            {
+                "user_id": "peterlee97",
+                "count": 3
+            },
+            {
+                "user_id": "johnwu",
+                "count": 3
+            },
+            {
+                "user_id": "ivan1994",
+                "count": 3
+            },
+            {
+                "user_id": "amare1015",
+                "count": 3
+            },
+            {
+                "user_id": "abellea85209",
+                "count": 3
+            },
+            {
+                "user_id": "FoRTuNaTeR",
+                "count": 3
+            },
+            {
+                "user_id": "yggyygy",
+                "count": 2
+            },
+            {
+                "user_id": "xiaofood",
+                "count": 2
+            }
+        ]
+    },
+    "boo": {
+        "total": 66,
+        "top10": [
+            {
+                "user_id": "madeathmao",
+                "count": 2
+            },
+            {
+                "user_id": "darren2586",
+                "count": 2
+            },
+            {
+                "user_id": "angelsi",
+                "count": 2
+            },
+            {
+                "user_id": "ShockHo222",
+                "count": 2
+            },
+            {
+                "user_id": "yushenglu",
+                "count": 1
+            },
+            {
+                "user_id": "yasamnoya",
+                "count": 1
+            },
+            {
+                "user_id": "xxxqma",
+                "count": 1
+            },
+            {
+                "user_id": "xuzx",
+                "count": 1
+            },
+            {
+                "user_id": "xinWu",
+                "count": 1
+            },
+            {
+                "user_id": "vicboy",
+                "count": 1
+            }
+        ]
+    }
+}

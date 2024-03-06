@@ -1,0 +1,7 @@
+model/
+data/
+__pycache__/
+Part2/table/
+database/
+handler/
+summit/
