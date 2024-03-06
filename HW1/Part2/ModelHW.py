@@ -38,22 +38,11 @@ class ModelHW:
 
         return cls(model)
 
-    # def _to_model_input_format(self, image) -> torch.Tensor:
-    #     img_tensor = self._transform(image)
-    #     img_tensor = img_tensor[np.newaxis, :]
-    #     return img_tensor
-
     def prediction(self, obj_tensor: torch.Tensor):
         pred_prob = self._model(obj_tensor)
         pred = torch.max(pred_prob, 1).indices
         # pred = pred.item()
         return pred
-
-    def predictions(self, image_path_lists: list):
-        pass
-
-    def __str__(self) -> str:
-        return self._model.__str__()
 
 
 class ImageDataset(Dataset):
