@@ -404,13 +404,6 @@ class CrawlerHW:
         "save file(2) and return is in 2023"
         # make like a human
         await asyncio.sleep(CrawlerHW.get_random_wait_time())
-        # print(small_page_dict)
-        # page_response = await client.get(
-        #     CrawlerHW.to_full_link(small_page_dict["URL"]),
-        #     headers=CrawlerHW.get_header(),
-        # )
-
-        # page_dict = CrawlerHW.page_to_simple_dict(html_str=page_response.text)
 
         page_dict = await CrawlerHW.url_page_to_simple_dict(
             CrawlerHW.to_full_link(small_page_dict["URL"]),
@@ -595,12 +588,6 @@ class CrawlerHW:
         # make like a human
         await asyncio.sleep(CrawlerHW.get_random_wait_time())
 
-        # page_response = await client.get(url, headers=CrawlerHW.get_header())
-
-        # page_dict = CrawlerHW.page_to_simple_dict(
-        #     page_response.text, func_list=[CrawlerHW.get_like_boo_count_dict]
-        # )
-
         page_dict = await CrawlerHW.url_page_to_simple_dict(
             url,
             client,
@@ -732,12 +719,6 @@ class CrawlerHW:
 
     async def craw_popular_page(self, url: str, client: httpx.AsyncClient):
         await asyncio.sleep(CrawlerHW.get_random_wait_time())
-        # popular_page_response = await client.get(url, headers=CrawlerHW.get_header())
-
-        # page_dict = CrawlerHW.page_to_simple_dict(
-        #     popular_page_response.text,
-        #     func_list=[CrawlerHW.get_images_from_page],
-        # )
 
         page_dict = await CrawlerHW.url_page_to_simple_dict(
             url,
@@ -806,16 +787,6 @@ class CrawlerHW:
 
     async def craw_page_by_keyword(self, url: str, client: httpx.AsyncClient, **kw):
         await asyncio.sleep(CrawlerHW.get_random_wait_time())
-
-        # page_response = await client.get(url, headers=CrawlerHW.get_header())
-
-        # page_dict = CrawlerHW.page_to_simple_dict(
-        #     page_response.text,
-        #     func_list=[
-        #         CrawlerHW.get_body_content,
-        #         CrawlerHW.get_images_from_page,
-        #     ],
-        # )
 
         page_dict = await CrawlerHW.url_page_to_simple_dict(
             url,
