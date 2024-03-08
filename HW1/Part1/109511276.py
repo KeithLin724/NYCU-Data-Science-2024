@@ -4,11 +4,12 @@ import random as rd
 import sys
 import time
 from functools import reduce
-from typing import Callable
+from typing import Callable, List
 
 import httpx
 import pandas as pd
 from bs4 import BeautifulSoup
+
 # from rich import print
 # from tqdm.asyncio import tqdm
 
@@ -100,6 +101,8 @@ class CrawlerHW:
 
     FIRST_TEN = 10
     CHUNK_SIZE = 100
+
+    RETRY_WAIT_TIME = 2
 
     def __init__(self) -> None:
         pass
@@ -312,7 +315,7 @@ class CrawlerHW:
     def to_pd_time_from_dict(detail_date: dict) -> pd.Timestamp:
         date_str = f"{detail_date.get('Year' , '')}-{detail_date.get('Month', '')}-{detail_date.get('Day', '')} {detail_date.get('Time', '')}"
         return {"pd_time": pd.to_datetime(date_str)}
-    
+
     @staticmethod
     async def page_time_range(url: str, client: httpx.AsyncClient):
         recommend_page_response = await client.get(url, headers=CrawlerHW.get_header())
@@ -336,7 +339,7 @@ class CrawlerHW:
 
         start_page_dict = CrawlerHW.page_to_simple_dict(start_page_response.content)
         end_page_dict = CrawlerHW.page_to_simple_dict(end_page_response.content)
-        
+
         start_page_time_dict = CrawlerHW.to_pd_time_from_dict(start_page_dict)
         end_page_time_dict = CrawlerHW.to_pd_time_from_dict(end_page_dict)
 
@@ -370,6 +373,29 @@ class CrawlerHW:
                 left = mid_number + 1
         return ""
 
+    @staticmethod
+    async def url_page_to_simple_dict(
+        url: str,
+        client: httpx.AsyncClient,
+        func_list: List[Callable] = None,
+        retry_task: int = 3,
+    ) -> dict:
+
+        for _ in range(retry_task):
+            try:
+                page_response = await client.get(url, headers=CrawlerHW.get_header())
+
+                page_dict = CrawlerHW.page_to_simple_dict(
+                    html_str=page_response.text,
+                    func_list=func_list,
+                )
+                return page_dict
+            except Exception as e:
+                print(f"Tasks error : {str(e)},URL : {url}, retry again")
+                await asyncio.sleep(CrawlerHW.RETRY_WAIT_TIME)
+
+        return {}
+
     ###############################################################
 
     # main function
@@ -379,12 +405,17 @@ class CrawlerHW:
         # make like a human
         await asyncio.sleep(CrawlerHW.get_random_wait_time())
         # print(small_page_dict)
-        page_response = await client.get(
-            CrawlerHW.to_full_link(small_page_dict["URL"]),
-            headers=CrawlerHW.get_header(),
-        )
+        # page_response = await client.get(
+        #     CrawlerHW.to_full_link(small_page_dict["URL"]),
+        #     headers=CrawlerHW.get_header(),
+        # )
 
-        page_dict = CrawlerHW.page_to_simple_dict(html_str=page_response.text)
+        # page_dict = CrawlerHW.page_to_simple_dict(html_str=page_response.text)
+
+        page_dict = await CrawlerHW.url_page_to_simple_dict(
+            CrawlerHW.to_full_link(small_page_dict["URL"]),
+            client,
+        )
 
         page_dict |= {
             "table_time": CrawlerHW.to_table_time(small_page_dict["Date"]),
@@ -564,10 +595,18 @@ class CrawlerHW:
         # make like a human
         await asyncio.sleep(CrawlerHW.get_random_wait_time())
 
-        page_response = await client.get(url, headers=CrawlerHW.get_header())
+        # page_response = await client.get(url, headers=CrawlerHW.get_header())
 
-        page_dict = CrawlerHW.page_to_simple_dict(
-            page_response.text, func_list=[CrawlerHW.get_like_boo_count_dict]
+        # page_dict = CrawlerHW.page_to_simple_dict(
+        #     page_response.text, func_list=[CrawlerHW.get_like_boo_count_dict]
+        # )
+
+        page_dict = await CrawlerHW.url_page_to_simple_dict(
+            url,
+            client,
+            func_list=[
+                CrawlerHW.get_like_boo_count_dict,
+            ],
         )
         print(f"Process url:{url}", end="\r")
 
@@ -693,11 +732,19 @@ class CrawlerHW:
 
     async def craw_popular_page(self, url: str, client: httpx.AsyncClient):
         await asyncio.sleep(CrawlerHW.get_random_wait_time())
-        popular_page_response = await client.get(url, headers=CrawlerHW.get_header())
+        # popular_page_response = await client.get(url, headers=CrawlerHW.get_header())
 
-        page_dict = CrawlerHW.page_to_simple_dict(
-            popular_page_response.text,
-            func_list=[CrawlerHW.get_images_from_page],
+        # page_dict = CrawlerHW.page_to_simple_dict(
+        #     popular_page_response.text,
+        #     func_list=[CrawlerHW.get_images_from_page],
+        # )
+
+        page_dict = await CrawlerHW.url_page_to_simple_dict(
+            url,
+            client,
+            func_list=[
+                CrawlerHW.get_images_from_page,
+            ],
         )
         print(f"Process url:{url}", end="\r")
         return {
@@ -760,10 +807,19 @@ class CrawlerHW:
     async def craw_page_by_keyword(self, url: str, client: httpx.AsyncClient, **kw):
         await asyncio.sleep(CrawlerHW.get_random_wait_time())
 
-        page_response = await client.get(url, headers=CrawlerHW.get_header())
+        # page_response = await client.get(url, headers=CrawlerHW.get_header())
 
-        page_dict = CrawlerHW.page_to_simple_dict(
-            page_response.text,
+        # page_dict = CrawlerHW.page_to_simple_dict(
+        #     page_response.text,
+        #     func_list=[
+        #         CrawlerHW.get_body_content,
+        #         CrawlerHW.get_images_from_page,
+        #     ],
+        # )
+
+        page_dict = await CrawlerHW.url_page_to_simple_dict(
+            url,
+            client,
             func_list=[
                 CrawlerHW.get_body_content,
                 CrawlerHW.get_images_from_page,
