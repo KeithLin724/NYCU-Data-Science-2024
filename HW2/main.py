@@ -78,6 +78,7 @@ class Main:
         # wait i mins
         result = await asyncio.gather(*chunk_pack)
 
+        # save file
         with open(file=Main.JSON_TEMP, mode="a", encoding="utf-8") as f:
             for item in result:
                 json.dump(item, f, ensure_ascii=False)
@@ -106,7 +107,7 @@ class Main:
         return tasks_result
 
     async def run(self):
-        model = ModelSelect.llama2
+        model = ModelSelect.mixtral
 
         question_bank = self._table.to_dict("records")
 
