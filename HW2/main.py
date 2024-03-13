@@ -8,6 +8,7 @@ from dotenv import load_dotenv
 from groq import AsyncGroq
 from tqdm import tqdm
 from tqdm.asyncio import tqdm as tqdm_async
+import json
 
 # from rich import print
 load_dotenv()
@@ -23,10 +24,14 @@ class ModelSelect:
 class Main:
     FILE_PATH = "./data-science-hw2-prompt-engineering/submit.csv"
     CHUNK_SIZE = 25
+    JSON_TEMP = "tmp.jsonl"
 
     def __init__(self) -> None:
         self._table = pd.read_csv(Main.FILE_PATH).drop(columns="Unnamed: 0")
         self._client = AsyncGroq(api_key=os.environ.get("GROQ_API_KEY"))
+
+        with open(file=Main.JSON_TEMP, mode="w") as f:
+            pass
 
     @staticmethod
     def make_question(dict_list: dict) -> dict:
@@ -72,6 +77,12 @@ class Main:
     async def cool_down_api(chunk_pack: list):
         # wait i mins
         result = await asyncio.gather(*chunk_pack)
+
+        with open(file=Main.JSON_TEMP, mode="a", encoding="utf-8") as f:
+            for item in result:
+                json.dump(item, f, ensure_ascii=False)
+                f.write("\n")
+
         for i in tqdm(range(60), desc="Waiting...", unit="s"):
             await asyncio.sleep(1)
 
