@@ -1,0 +1,5 @@
+groq
+pandas
+python-dotenv
+g4f[all]
+nest_asyncio
