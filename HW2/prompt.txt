@@ -1,0 +1,21 @@
+Prompt you use : 
+
+"""
+You are a {task} student // define a role
+Here is a question {input}, and this is a choose
+A : ...
+B : ...
+C : ...
+D : ...
+which one is a answer ? please replay following this format (A) (B) (C) or (D), no need to explain
+"""
+
+LLM Model : 
+mixtral-8x7b-32768 : acc 0.786
+llama2-70b-4096 : acc 0.757
+gemma-7b-it : acc 0.573
+
+
+Your prompt strategy: 
+1. Give a role for LLM (important)
+2. ask a question
