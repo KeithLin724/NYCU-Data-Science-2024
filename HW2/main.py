@@ -9,8 +9,10 @@ from groq import AsyncGroq
 from tqdm import tqdm
 from tqdm.asyncio import tqdm as tqdm_async
 import json
+import click
+import random as rd
 
-# from rich import print
+
 load_dotenv()
 
 
@@ -22,14 +24,18 @@ class ModelSelect:
 
 
 class Main:
-    FILE_PATH = "./data-science-hw2-prompt-engineering/submit.csv"
+    # FILE_PATH = "./data-science-hw2-prompt-engineering/submit.csv"
     CHUNK_SIZE = 25
     JSON_TEMP = "tmp.jsonl"
 
-    def __init__(self) -> None:
-        self._table = pd.read_csv(Main.FILE_PATH).drop(columns="Unnamed: 0")
+    def __init__(self, file_path: str) -> None:
+        self._file_path = file_path
+        self._table = pd.read_csv(self._file_path)
+        self._table = self._table.rename(columns={"Unnamed: 0": "ID"})
+
         self._client = AsyncGroq(api_key=os.environ.get("GROQ_API_KEY"))
 
+        # make a temp file
         with open(file=Main.JSON_TEMP, mode="w") as f:
             pass
 
@@ -64,8 +70,8 @@ class Main:
         )
         return chat_completion.choices[0].message.content
 
-    async def ask_question(self, question_line: dict, id_: int, model: str):
-        result = {"id": id_}  # , "target" :
+    async def ask_question(self, question_line: dict, model: str):
+        result = {"ID": question_line["ID"]}  # , "target" :
 
         question = Main.make_question(question_line)
 
@@ -106,22 +112,79 @@ class Main:
         tasks_result = sum(tasks_result, [])
         return tasks_result
 
-    async def run(self):
-        model = ModelSelect.mixtral
+    @staticmethod
+    def handle_ans(row: dict) -> dict:
+
+        mapping = {
+            ("(A)", "A:", "A."): "A",
+            ("(B)", "B:", "B."): "B",
+            ("(C)", "C:", "C."): "C",
+            ("(D)", "D:", "D."): "D",
+        }
+
+        def change_is(str_part: str) -> str:
+            for check, change in mapping.items():
+                if check in str_part:
+                    return change
+
+            return None
+
+        target = row["target"]
+        target = target.split("\n")
+
+        target = [change_is(str_part) for str_part in target]
+        target = [item for item in target if item is not None]
+
+        row["target"] = (
+            target[0] if len(target) != 0 else rd.choice(list(mapping.values()))
+        )
+        return row
+
+    @staticmethod
+    def model_select(model_id: int) -> str:
+        model_list = [ModelSelect.llama2, ModelSelect.mixtral, ModelSelect.gemma]
+        return model_list[model_id - 1]
+
+    async def run(self, model_id: int):
+        model = Main.model_select(model_id)
 
         question_bank = self._table.to_dict("records")
 
         tasks = [
-            self.ask_question(question_line, index, model)
-            for index, question_line in enumerate(question_bank)
+            self.ask_question(question_line, model) for question_line in question_bank
         ]
 
         result = await Main.gather(*tasks)
         df_result = pd.DataFrame(result)
-        df_result.to_csv(f"{model}_pre.csv")
+        df_result.to_csv(f"{model}_pre.csv", index=False)
+
+        df_ans = df_result.apply(Main.handle_ans, axis=1)
+        df_ans.to_csv(f"{model}_ans.csv", index=False)
 
         return
 
 
+@click.command()
+@click.option(
+    "-f",
+    "--file_path",
+    help="file name",
+    required=True,
+    type=str,
+)
+@click.option(
+    "-id",
+    "--model_id",
+    default=1,
+    type=int,
+    help="Select Model to Run [1: llama2 ,2: mixtral, 3: gemma]",
+    show_default=True,
+)
+def main(file_path: str, model_id: int) -> None:
+    "run the app"
+    asyncio.run(Main(file_path).run(model_id))
+    return
+
+
 if __name__ == "__main__":
-    asyncio.run(Main().run())
+    main()
