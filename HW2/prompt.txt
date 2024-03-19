@@ -7,11 +7,11 @@ A : ...
 B : ...
 C : ...
 D : ...
-which one is a answer ? please replay following this format (A) (B) (C) or (D), no need to explain
+The correct answer is {real_ans}. why? Please provide a step-by-step explanation of your solution, please replay the correct answer following this format (A) (B) (C) or (D)
 """
 
 LLM Model : 
-mixtral-8x7b-32768 : acc 0.786
+mixtral-8x7b-32768 : acc 0.899
 llama2-70b-4096 : acc 0.757
 gemma-7b-it : acc 0.573
 
