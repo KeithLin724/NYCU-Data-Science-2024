@@ -6,6 +6,8 @@
 
 Question : <https://www.kaggle.com/competitions/data-science-hw2-prompt-engineering/overview>
 
+MMLU dataset : [here](<https://people.eecs.berkeley.edu/~hendrycks/data.tar>)
+
 ---
 
 ### Setup
