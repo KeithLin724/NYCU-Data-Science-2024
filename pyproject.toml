@@ -1,0 +1,21 @@
+[tool.poetry]
+name = "nycu-data-science-2024"
+version = "0.1.0"
+description = ""
+authors = ["KeithLin724 <keithlin724@gmail.com>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.11"
+rich = "^13.7.1"
+pandas = "^2.2.1"
+numpy = "^1.26.4"
+datasets = "^2.18.0"
+torch = "^2.2.1"
+torchvision = "^0.17.1"
+torchaudio = "^2.2.1"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
