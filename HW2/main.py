@@ -32,6 +32,9 @@ class Main:
         self._file_path = file_path
         self._table = pd.read_csv(self._file_path)
         self._table = self._table.rename(columns={"Unnamed: 0": "ID"})
+        self._table_true = pd.read_csv("./submit_true.csv")
+
+        self._table.loc[:, "answer"] = self._table_true.loc[:, "answer"]
 
         self._client = AsyncGroq(api_key=os.environ.get("GROQ_API_KEY"))
 
@@ -42,7 +45,7 @@ class Main:
     @staticmethod
     def make_question(dict_list: dict) -> dict:
         "for model"
-        result_dict = {"role": f"You are a {dict_list['task']} student"}
+        result_dict = {"role": f"You are a {dict_list['task']} professor"}
         dict_list.pop("task")
 
         result = f"Here is a question {dict_list['input']}, and this is a choose\n"
@@ -51,7 +54,7 @@ class Main:
         result_choose = "\n".join(result_choose)
         result += result_choose
 
-        result += "\nwhich one is a answer ? please replay following this format (A) (B) (C) or (D), no need to explain"
+        result += f"\nThe correct answer is {dict_list['answer']}. why? Please provide a step-by-step explanation of your solution, please replay the correct answer following this format (A) (B) (C) or (D)"
         return result_dict | {"content": result}
 
     async def ask(self, role: str, question: str, model: str):
@@ -116,10 +119,10 @@ class Main:
     def handle_ans(row: dict) -> dict:
 
         mapping = {
-            ("(A)", "A:", "A."): "A",
-            ("(B)", "B:", "B."): "B",
-            ("(C)", "C:", "C."): "C",
-            ("(D)", "D:", "D."): "D",
+            ("(A)", "A:", "A.", "A)"): "A",
+            ("(B)", "B:", "B.", "B)"): "B",
+            ("(C)", "C:", "C.", "C)"): "C",
+            ("(D)", "D:", "D.", "D)"): "D",
         }
 
         def change_is(str_part: str) -> str:
@@ -149,6 +152,8 @@ class Main:
         model = Main.model_select(model_id)
 
         question_bank = self._table.to_dict("records")
+
+        # print(question_bank)
 
         tasks = [
             self.ask_question(question_line, model) for question_line in question_bank
