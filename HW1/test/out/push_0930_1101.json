@@ -1,0 +1,92 @@
+{
+    "push": {
+        "total": 4624,
+        "top10": [
+            {
+                "user_id": "johnwu",
+                "count": 93
+            },
+            {
+                "user_id": "Krishna",
+                "count": 75
+            },
+            {
+                "user_id": "spermjuice",
+                "count": 60
+            },
+            {
+                "user_id": "kai6366",
+                "count": 56
+            },
+            {
+                "user_id": "thewtf",
+                "count": 53
+            },
+            {
+                "user_id": "amare1015",
+                "count": 53
+            },
+            {
+                "user_id": "wafiea708",
+                "count": 46
+            },
+            {
+                "user_id": "sam1304",
+                "count": 44
+            },
+            {
+                "user_id": "gg86300",
+                "count": 43
+            },
+            {
+                "user_id": "pisu",
+                "count": 42
+            }
+        ]
+    },
+    "boo": {
+        "total": 1140,
+        "top10": [
+            {
+                "user_id": "love0504",
+                "count": 46
+            },
+            {
+                "user_id": "ijk1",
+                "count": 22
+            },
+            {
+                "user_id": "htc10",
+                "count": 19
+            },
+            {
+                "user_id": "Roooz",
+                "count": 19
+            },
+            {
+                "user_id": "chiz2",
+                "count": 16
+            },
+            {
+                "user_id": "GeminiShiny",
+                "count": 15
+            },
+            {
+                "user_id": "adamsas1995",
+                "count": 13
+            },
+            {
+                "user_id": "YesNoter",
+                "count": 13
+            },
+            {
+                "user_id": "cityhunter04",
+                "count": 12
+            },
+            {
+                "user_id": "hyakkiyagyo",
+                "count": 11
+            }
+        ]
+    }
+}
