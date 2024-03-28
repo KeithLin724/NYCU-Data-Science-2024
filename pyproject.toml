@@ -25,6 +25,8 @@ transformers = {extras = ["torch"], version = "^4.39.1"}
 rouge-score = "^0.1.2"
 nltk = "^3.8.1"
 kaggle = "^1.6.8"
+tensorboardx = "^2.6.2.2"
+torch-tb-profiler = "^0.4.3"
 
 
 [tool.poetry.group.dev.dependencies]
