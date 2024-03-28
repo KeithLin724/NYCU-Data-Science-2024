@@ -12,6 +12,36 @@ files = [
 ]
 
 [[package]]
+name = "accelerate"
+version = "0.28.0"
+description = "Accelerate"
+optional = false
+python-versions = ">=3.8.0"
+files = [
+    {file = "accelerate-0.28.0-py3-none-any.whl", hash = "sha256:8ae25f8a8dc4cf12283842c469113836300545fb0dfa46fef331fb0a2ac8b421"},
+    {file = "accelerate-0.28.0.tar.gz", hash = "sha256:32019a49f4b3a85cc179ac4e38e9e2971f1a997dee026be0512816499464c4d5"},
+]
+
+[package.dependencies]
+huggingface-hub = "*"
+numpy = ">=1.17"
+packaging = ">=20.0"
+psutil = "*"
+pyyaml = "*"
+safetensors = ">=0.3.1"
+torch = ">=1.10.0"
+
+[package.extras]
+dev = ["bitsandbytes", "black (>=23.1,<24.0)", "datasets", "deepspeed (<0.13.0)", "evaluate", "hf-doc-builder (>=0.3.0)", "parameterized", "pytest (>=7.2.0,<=8.0.0)", "pytest-subtests", "pytest-xdist", "rich", "ruff (>=0.2.1,<0.3.0)", "scikit-learn", "scipy", "timm", "torchpippy (>=0.2.0)", "tqdm", "transformers"]
+quality = ["black (>=23.1,<24.0)", "hf-doc-builder (>=0.3.0)", "ruff (>=0.2.1,<0.3.0)"]
+rich = ["rich"]
+sagemaker = ["sagemaker"]
+test-dev = ["bitsandbytes", "datasets", "deepspeed (<0.13.0)", "evaluate", "scikit-learn", "scipy", "timm", "torchpippy (>=0.2.0)", "tqdm", "transformers"]
+test-prod = ["parameterized", "pytest (>=7.2.0,<=8.0.0)", "pytest-subtests", "pytest-xdist"]
+test-trackers = ["comet-ml", "dvclive", "tensorboard", "wandb"]
+testing = ["bitsandbytes", "datasets", "deepspeed (<0.13.0)", "evaluate", "parameterized", "pytest (>=7.2.0,<=8.0.0)", "pytest-subtests", "pytest-xdist", "scikit-learn", "scipy", "timm", "torchpippy (>=0.2.0)", "tqdm", "transformers"]
+
+[[package]]
 name = "aiohttp"
 version = "3.9.3"
 description = "Async http client/server framework (asyncio)"
@@ -2869,6 +2899,7 @@ files = [
 ]
 
 [package.dependencies]
+accelerate = {version = ">=0.21.0", optional = true, markers = "extra == \"torch\""}
 filelock = "*"
 huggingface-hub = ">=0.19.3,<1.0"
 numpy = ">=1.17"
@@ -2878,6 +2909,7 @@ regex = "!=2019.12.17"
 requests = "*"
 safetensors = ">=0.4.1"
 tokenizers = ">=0.14,<0.19"
+torch = {version = "*", optional = true, markers = "extra == \"torch\""}
 tqdm = ">=4.27"
 
 [package.extras]
@@ -3232,4 +3264,4 @@ multidict = ">=4.0"
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.11"
-content-hash = "3157a009c767af312b371a90f52d2f2cb16a2d5c8837749e1c9c72cc0d824866"
+content-hash = "06d0bec54f44bb9bdab6fd4e4bab0f0f46db051d64c58160167598e041c51d49"
