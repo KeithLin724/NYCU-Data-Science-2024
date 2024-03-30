@@ -27,6 +27,8 @@ nltk = "^3.8.1"
 kaggle = "^1.6.8"
 tensorboardx = "^2.6.2.2"
 torch-tb-profiler = "^0.4.3"
+bert-score = "^0.3.13"
+evaluate = "^0.4.1"
 
 
 [tool.poetry.group.dev.dependencies]
