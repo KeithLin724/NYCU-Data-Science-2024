@@ -29,6 +29,8 @@ tensorboardx = "^2.6.2.2"
 torch-tb-profiler = "^0.4.3"
 bert-score = "^0.3.13"
 evaluate = "^0.4.1"
+accelerate = "^0.28.0"
+sentencepiece = "^0.2.0"
 
 
 [tool.poetry.group.dev.dependencies]
