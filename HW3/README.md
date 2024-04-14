@@ -6,6 +6,10 @@
 
 ### How to run it
 
+#### First
+
+you need put the train and test source in data folder
+
 ```sh
 # run all 
 # inside have 2 step 
