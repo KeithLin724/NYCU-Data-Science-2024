@@ -32,6 +32,9 @@ evaluate = "^0.4.1"
 accelerate = "^0.28.0"
 sentencepiece = "^0.2.0"
 nbconvert = "^7.16.3"
+einops = "^0.7.0"
+loralib = "^0.1.2"
+bitsandbytes = "^0.43.1"
 
 
 [tool.poetry.group.dev.dependencies]
