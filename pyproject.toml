@@ -36,6 +36,7 @@ einops = "^0.7.0"
 loralib = "^0.1.2"
 bitsandbytes = "^0.43.1"
 ipywidgets = "^8.1.2"
+nni = "^3.0"
 
 
 [tool.poetry.group.dev.dependencies]
