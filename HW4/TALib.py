@@ -4,6 +4,9 @@ import pandas as pd
 import csv
 import numpy as np
 import evaluate
+import torch
+from transformers import AutoModelForSeq2SeqLM, T5ForConditionalGeneration
+import torch.nn.utils.prune as prune
 
 
 class TALib:
@@ -44,7 +47,12 @@ class TALib:
             if "mask" in name
         )
 
-        return (num_param - num_mask) / num_param
+        res = (num_param - num_mask) / num_param
+
+        if isinstance(res, torch.Tensor):
+            res = res.item()
+
+        return res
 
     def to_ta_kaggle_format(data: list[str]) -> pd.DataFrame:
 
@@ -87,7 +95,7 @@ class TALib:
         df_results["Predict"] = df_results["Predict"].apply(escape_special_characters)
 
         df_results.to_csv(
-            "full_model_sample_submission.csv",
+            filename,
             index=False,
             quoting=csv.QUOTE_ALL,
             encoding="utf-8",
@@ -205,3 +213,33 @@ class TALib:
             return {k: round(v, 4) for k, v in result.items()}
 
         return compute_metrics
+
+    @staticmethod
+    def save_model(model: T5ForConditionalGeneration, folder_path: str):
+        "save_ta_format"
+        if not os.path.exists(folder_path):
+            os.makedirs(folder_path)
+
+        model.save_pretrained(folder_path, from_pt=True)
+        torch.save(model.state_dict(), f"{folder_path}/model_state_dict.pth")
+
+        return
+
+    @staticmethod
+    def load_model(folder_path: str) -> T5ForConditionalGeneration:
+        "load_ta_format"
+        if not os.path.exists(folder_path):
+            raise ValueError("folder is not found")
+
+        model = AutoModelForSeq2SeqLM.from_pretrained(folder_path)
+
+        # Apply prune.identity to the layers that were pruned
+
+        for module in model.modules():
+            if isinstance(module, torch.nn.Linear):
+                # Check the layer type as per your model's pruned layers
+                prune.identity(module, "weight")
+
+        model.load_state_dict(torch.load(f"{folder_path}/model_state_dict.pth"))
+
+        return model
