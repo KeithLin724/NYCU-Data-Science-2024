@@ -59,3 +59,10 @@ Step
 nni in transformer : [here](https://www.infoq.cn/article/6mA1gDVFWU1oj1ZdQyD2)
 
 nni in transformer example : [here](https://nni.readthedocs.io/en/stable/tutorials/new_pruning_bert_glue.html)
+
+nni config list : [here](https://nni.readthedocs.io/zh/stable/compression/config_list.html)
+
+---
+T5 Model : [here](https://zhuanlan.zhihu.com/p/647802200)
+
+Pruning : [here](https://github.com/airaria/TextPruner)
