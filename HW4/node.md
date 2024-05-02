@@ -66,3 +66,24 @@ nni config list : [here](https://nni.readthedocs.io/zh/stable/compression/config
 T5 Model : [here](https://zhuanlan.zhihu.com/p/647802200)
 
 Pruning : [here](https://github.com/airaria/TextPruner)
+
+---
+
+## Torch-Pruning
+
+Github : <https://github.com/VainF/Torch-Pruning?tab=readme-ov-file>
+
+---
+
+## Experience
+
+Using torch
+method = prune.L1Unstructured
+amount = 0.7
+
+output_ratio = 0.30019545555114746
+ta_source =  0.004295506016314647
+
+not pass baseline
+
+---
