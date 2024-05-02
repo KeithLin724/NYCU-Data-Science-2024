@@ -4286,6 +4286,21 @@ opt-einsum = ["opt-einsum (>=3.3)"]
 optree = ["optree (>=0.9.1)"]
 
 [[package]]
+name = "torch-pruning"
+version = "1.3.7"
+description = "Towards Any Structural Pruning"
+optional = false
+python-versions = ">=3.6"
+files = [
+    {file = "torch-pruning-1.3.7.tar.gz", hash = "sha256:01b3feae00f06a999fb0623a1c69693c9177c1ae3127e3061c2779cd22239a25"},
+    {file = "torch_pruning-1.3.7-py3-none-any.whl", hash = "sha256:015266a9ad2451e4392a1b422e6788350cc8898d06ac033b4aa8d79aa5ea4d94"},
+]
+
+[package.dependencies]
+numpy = "*"
+torch = "*"
+
+[[package]]
 name = "torch-tb-profiler"
 version = "0.4.3"
 description = "PyTorch Profiler TensorBoard Plugin"
@@ -4934,4 +4949,4 @@ multidict = ">=4.0"
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.11"
-content-hash = "cba0e140f72fb4353420eb3fb383af2177b486481f292fabf5737df5121e2027"
+content-hash = "c2c3de86007550c899217ec0946c171da71631bcdd849fafd604085a5de0c255"
