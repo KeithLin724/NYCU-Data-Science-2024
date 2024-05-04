@@ -5,8 +5,17 @@ import csv
 import numpy as np
 import evaluate
 import torch
-from transformers import AutoModelForSeq2SeqLM, T5ForConditionalGeneration
+from transformers import (
+    AutoModelForSeq2SeqLM,
+    AutoTokenizer,
+    T5ForConditionalGeneration,
+    DataCollatorForSeq2Seq,
+    # trainer
+    Seq2SeqTrainingArguments,
+    Seq2SeqTrainer,
+)
 import torch.nn.utils.prune as prune
+from datasets import load_dataset
 
 
 class TALib:
@@ -17,7 +26,80 @@ class TALib:
         os.environ["WANDB_MODE"] = "disabled"
         os.environ["CUDA_VISIBLE_DEVICES"] = "0"
 
+        self.load_data()
+
         return
+
+    def load_data(self):
+        self.billsum, self.billsum_test = (
+            load_dataset("billsum", split="train"),
+            load_dataset("billsum", split="test"),
+        )
+
+        self.tokenizer = AutoTokenizer.from_pretrained(TALib.TK_ckpt)
+
+        preprocess_function = TALib.preprocess_function_pass_tokenizer(self.tokenizer)
+
+        self.billsum = self.billsum.train_test_split(test_size=0.2)
+
+        self.tokenized_billsum = self.billsum.map(preprocess_function, batched=True)
+        self.tokenized_billsum_test = self.billsum_test.map(
+            preprocess_function, batched=True
+        )
+
+        return
+
+    def get_trainer(
+        self,
+        model: T5ForConditionalGeneration,
+        num_train_epochs: int = 4,
+        batch_size: int = 2,
+        output_dir: str = "TA_billsum_model",
+    ):
+
+        data_collator = DataCollatorForSeq2Seq(
+            tokenizer=self.tokenizer, model=TALib.CHECKPOINT
+        )
+
+        training_args = Seq2SeqTrainingArguments(
+            output_dir=output_dir,
+            evaluation_strategy="epoch",
+            learning_rate=2e-5,
+            per_device_train_batch_size=batch_size,
+            per_device_eval_batch_size=batch_size,
+            weight_decay=0.01,  # Assuming you still want weight decay as it wasn't mentioned to remove
+            save_total_limit=3,  # Assuming to maintain the save limit as before
+            num_train_epochs=num_train_epochs,
+            lr_scheduler_type="linear",
+            seed=42,
+            fp16=True,  # You mentioned "Native AMP" for mixed precision training which is generally enabled by setting fp16=True in Transformers
+            logging_steps=10,  # Assuming to keep the logging frequency as before
+            predict_with_generate=True,
+        )
+
+        compute_metrics = TALib.compute_metrics_pass_tokenizer(self.tokenizer)
+
+        trainer = Seq2SeqTrainer(
+            model=model,
+            args=training_args,
+            train_dataset=self.tokenized_billsum["train"],
+            eval_dataset=self.tokenized_billsum["test"],
+            tokenizer=self.tokenizer,
+            data_collator=data_collator,
+            compute_metrics=compute_metrics,
+        )
+
+        return trainer
+
+    def predict_and_dump(self, trainer: Seq2SeqTrainer, filename: str):
+        results = trainer.predict(self.tokenized_billsum_test)
+        decoded_prediction = self.tokenizer.batch_decode(
+            results[0], skip_special_tokens=True
+        )
+
+        TALib.dump_to_kaggle_format(decoded_prediction, filename)
+
+        return results
 
     # static
     @staticmethod
