@@ -55,6 +55,7 @@ class TALib:
         num_train_epochs: int = 4,
         batch_size: int = 2,
         output_dir: str = "TA_billsum_model",
+        generation_max_length: int = None,
     ):
 
         data_collator = DataCollatorForSeq2Seq(
@@ -75,6 +76,7 @@ class TALib:
             fp16=True,  # You mentioned "Native AMP" for mixed precision training which is generally enabled by setting fp16=True in Transformers
             logging_steps=10,  # Assuming to keep the logging frequency as before
             predict_with_generate=True,
+            generation_max_length=generation_max_length,
         )
 
         compute_metrics = TALib.compute_metrics_pass_tokenizer(self.tokenizer)
@@ -108,10 +110,20 @@ class TALib:
 
         def preprocess_function(examples):
             inputs = [prefix + doc for doc in examples["text"]]
-            model_inputs = tokenizer(inputs, max_length=1024, truncation=True)
+            model_inputs = tokenizer(
+                inputs,
+                max_length=1024,
+                truncation=True,
+                padding=True,
+                return_tensors="pt",
+            )
 
             labels = tokenizer(
-                text_target=examples["summary"], max_length=128, truncation=True
+                text_target=examples["summary"],
+                max_length=128,
+                truncation=True,
+                padding=True,
+                return_tensors="pt",
             )
 
             model_inputs["labels"] = labels["input_ids"]
