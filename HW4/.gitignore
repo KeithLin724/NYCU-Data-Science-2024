@@ -1,1 +1,8 @@
 .vscode/
+backup/
+t5small_TextSummarization/
+TA_billsum_model/
+__pycache__/
+output/
+KY_billsum_model/
+109511276.zip
