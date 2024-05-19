@@ -17,10 +17,18 @@ GAN : <https://www.youtube.com/watch?v=_pIMdDWK5sc>
 
 ## Model
 
+### CPM
+
+Github : <https://github.com/VinAIResearch/CPM>
+
 ### PSGAN
 
 Github : <https://github.com/wtjiang98/PSGAN?tab=readme-ov-file>
 Website : <https://zhuanlan.zhihu.com/p/136648215>
+
+### segmentation_models_pytorch
+
+CSDN : <https://blog.csdn.net/oJiWuXuan/article/details/119541003>
 
 ### StarGAN
 
