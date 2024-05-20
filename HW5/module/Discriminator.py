@@ -7,7 +7,11 @@ class Discriminator(nn.Module):
     """Discriminator. PatchGAN."""
 
     def __init__(
-        self, image_size=128, conv_dim: int = 64, repeat_num: int = 3, norm: str = "SN"
+        self,
+        image_size: int = 128,
+        conv_dim: int = 64,
+        repeat_num: int = 3,
+        norm: str = "SN",
     ):
         super().__init__()
 
