@@ -65,6 +65,14 @@ ZhiHu 2: <https://zhuanlan.zhihu.com/p/514551618>
 GitHub : <https://github.com/junyanz/pytorch-CycleGAN-and-pix2pix>
 GitHub : <https://github.com/aitorzip/PyTorch-CycleGAN>
 
+Paper walk youtube : <https://www.youtube.com/watch?v=5jziBapziYE&list=TLPQMjAwNTIwMjQF3S3SlF650g&index=3>
+
+Implementation in youtube : <https://www.youtube.com/watch?v=4LktBHGCNfw&list=TLPQMjAwNTIwMjQF3S3SlF650g&index=4>
+
+### BeautyGAN
+
+Github : <https://github.com/wtjiang98/BeautyGAN_pytorch>
+
 ### UNet
 
 Youtube : <https://www.youtube.com/watch?v=NhdzGfB1q74&list=TLPQMjAwNTIwMjQF3S3SlF650g&index=2>
