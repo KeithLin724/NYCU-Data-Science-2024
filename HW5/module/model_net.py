@@ -12,7 +12,7 @@ class Generator(nn.Module):
     """Generator. Encoder-Decoder Architecture."""
 
     def __init__(self):
-        super(Generator, self).__init__()
+        super().__init__()
 
         # -------------------------- PNet(MDNet) for obtaining makeup matrices --------------------------
 
@@ -280,7 +280,7 @@ class Discriminator(nn.Module):
     """Discriminator. PatchGAN."""
 
     def __init__(self, image_size=128, conv_dim=64, repeat_num=3, norm="SN"):
-        super(Discriminator, self).__init__()
+        super().__init__()
 
         layers = []
         if norm == "SN":
