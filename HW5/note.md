@@ -41,3 +41,13 @@ CSDN : <https://github.com/yunjey/stargan?tab=readme-ov-file>
 
 Website : <https://lightning.ai/docs/pytorch/stable/>
 Other Website : <https://zhuanlan.zhihu.com/p/353985363>
+
+### Try Using the PSGAN (re-implements)
+
+re-implements using the pytorch-lightning and segment models pytorch  
+
+try all use pytorch-lightning
+
+1. [ ] Data Loader
+2. [ ] Generator, Discriminator
+3. [ ] GAN Using pytorch-lightning
