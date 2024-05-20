@@ -7,11 +7,11 @@ from torch.utils.data import Dataset
 from PIL import Image
 from .DataReader import DataReader
 
-# from psgan.preprocess import PreProcess
+from .PreProcess import PreProcess
 
 
 class MakeupDataloader(Dataset):
-    def __init__(self, image_path, preprocess, transform, transform_mask):
+    def __init__(self, image_path, preprocess: PreProcess, transform, transform_mask):
         self.image_path = image_path
         self.transform = transform
         self.transform_mask = transform_mask

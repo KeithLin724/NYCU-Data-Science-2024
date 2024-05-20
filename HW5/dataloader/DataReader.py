@@ -45,8 +45,9 @@ class DataReader:
             assert isinstance(index, int)
             index_non_makeup = index
 
-        return self.read_file(self.non_makeup_names[index_non_makeup]), self.read_file(
-            self.makeup_names[index]
+        return (
+            self.read_file(self.non_makeup_names[index_non_makeup]),
+            self.read_file(self.makeup_names[index]),
         )
 
     def __len__(self):

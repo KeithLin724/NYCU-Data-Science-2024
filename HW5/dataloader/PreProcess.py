@@ -108,7 +108,7 @@ class PreProcess:
         self.lip_class = config.PREPROCESS.LIP_CLASS
         self.face_class = config.PREPROCESS.FACE_CLASS
 
-    def relative2absolute(self, lms):
+    def relative2absolute(self, lms: float):
         return lms * self.img_size
 
     def process(self, mask, lms, device="cpu"):
