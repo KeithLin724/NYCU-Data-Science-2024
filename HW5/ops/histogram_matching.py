@@ -2,9 +2,10 @@ import numpy as np
 import torch
 import copy
 
+
 def cal_hist(image):
     """
-        cal cumulative hist for channel list
+    cal cumulative hist for channel list
     """
     hists = []
     for i in range(0, 3):
@@ -15,8 +16,8 @@ def cal_hist(image):
         hist = torch.histc(channel, bins=256, min=0, max=256)
         hist = hist.numpy()
         # refHist=hist.view(256,1)
-        sum = hist.sum()
-        pdf = [v / sum for v in hist]
+        sum_res = hist.sum()
+        pdf = [v / sum_res for v in hist]
         for i in range(1, 256):
             pdf[i] = pdf[i - 1] + pdf[i]
         hists.append(pdf)
@@ -25,8 +26,8 @@ def cal_hist(image):
 
 def cal_trans(ref, adj):
     """
-        calculate transfer function
-        algorithm refering to wiki item: Histogram matching
+    calculate transfer function
+    algorithm refering to wiki item: Histogram matching
     """
     table = list(range(0, 256))
     for i in list(range(1, 256)):
@@ -40,10 +41,10 @@ def cal_trans(ref, adj):
 
 def histogram_matching(dstImg, refImg, index):
     """
-        perform histogram matching
-        dstImg is transformed to have the same the histogram with refImg's
-        index[0], index[1]: the index of pixels that need to be transformed in dstImg
-        index[2], index[3]: the index of pixels that to compute histogram in refImg
+    perform histogram matching
+    dstImg is transformed to have the same the histogram with refImg's
+    index[0], index[1]: the index of pixels that need to be transformed in dstImg
+    index[2], index[3]: the index of pixels that to compute histogram in refImg
     """
     index = [x.cpu().numpy() for x in index]
     dstImg = dstImg.detach().cpu().numpy()
