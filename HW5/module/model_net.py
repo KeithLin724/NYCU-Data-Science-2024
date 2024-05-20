@@ -4,8 +4,8 @@ import torch.nn.functional as F
 
 import lightning as L
 
-from .BaseComponents import BaseComponents as bc
-from .SpectralNorm import SpectralNorm
+from BaseComponents import BaseComponents as bc
+from SpectralNorm import spectral_norm as SpectralNorm
 
 
 class Generator(nn.Module):
