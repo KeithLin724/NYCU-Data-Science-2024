@@ -32,9 +32,10 @@ class Discriminator(nn.Module):
                 bias=bias,
             )
 
-        layers = [layer_type(3, conv_dim, kernel_size=4, stride=2, padding=1)]
-
-        layers.append(nn.LeakyReLU(0.01, inplace=True))
+        layers = [
+            layer_type(3, conv_dim, kernel_size=4, stride=2, padding=1),
+            nn.LeakyReLU(0.01, inplace=True),
+        ]
 
         curr_dim = conv_dim
         for _ in range(1, repeat_num):
