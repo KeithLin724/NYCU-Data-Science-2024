@@ -6,7 +6,7 @@ def l2normalize(v: torch.Tensor, eps=1e-12):
     return v / (v.norm() + eps)
 
 
-class SpectralNorm(object):
+class SpectralNorm:
     def __init__(self):
         self.name = "weight"
 
