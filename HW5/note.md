@@ -51,3 +51,20 @@ try all use pytorch-lightning
 1. [ ] Data Loader
 2. [ ] Generator, Discriminator
 3. [ ] GAN Using pytorch-lightning
+
+### New Pix2Pix
+
+GitHub : <https://github.com/junyanz/pytorch-CycleGAN-and-pix2pix>
+
+### News CycleGAN
+
+What is CycleGAN : <https://www.youtube.com/watch?v=-8hfnlxEPn4>
+
+ZhiHu : <https://zhuanlan.zhihu.com/p/402819206>
+ZhiHu 2: <https://zhuanlan.zhihu.com/p/514551618>
+GitHub : <https://github.com/junyanz/pytorch-CycleGAN-and-pix2pix>
+GitHub : <https://github.com/aitorzip/PyTorch-CycleGAN>
+
+### UNet
+
+Youtube : <https://www.youtube.com/watch?v=NhdzGfB1q74&list=TLPQMjAwNTIwMjQF3S3SlF650g&index=2>
