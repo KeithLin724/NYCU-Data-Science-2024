@@ -41,6 +41,7 @@ opencv-contrib-python = "^4.9.0.80"
 lightning = "^2.2.4"
 face-utils = "^0.1.0"
 segmentation-models-pytorch = "^0.3.3"
+easydict = "^1.13"
 
 
 [tool.poetry.group.dev.dependencies]
