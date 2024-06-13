@@ -80,8 +80,8 @@ class SegmentLoss(nn.Module):
         # Unlabeled loss
         distillation_loss = 0
         if weak_pred is not None:
-            psuedo_prob = F.softmax(weak_pred / self.temperature, dim=1)
-            max_prob_each_channel = psuedo_prob.amax(dim=1)
+            pseudo_prob = F.softmax(weak_pred / self.temperature, dim=1)
+            max_prob_each_channel = pseudo_prob.amax(dim=1)
             mask = max_prob_each_channel > self.threshold
             if mask.sum() > 0:
                 distillation_loss = (
