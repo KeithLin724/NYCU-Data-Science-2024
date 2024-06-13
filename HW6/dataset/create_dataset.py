@@ -138,7 +138,7 @@ def get_semi_supervised_transform(img_size: int) -> albu.Compose:
         ),
     ]
 
-    strong_train_tramsform = [
+    strong_train_transform = [
         albu.OneOf(
             [
                 albu.CLAHE(p=1),
@@ -164,7 +164,7 @@ def get_semi_supervised_transform(img_size: int) -> albu.Compose:
     ]
     return albu.Compose(
         common_train_transform, additional_targets={"strong": "image"}
-    ), albu.Compose(strong_train_tramsform)
+    ), albu.Compose(strong_train_transform)
 
 
 def get_validation_transform(img_size: int) -> albu.Compose:
