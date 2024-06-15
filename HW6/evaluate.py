@@ -49,6 +49,7 @@ def compute_iou(pred: np.ndarray, target: np.ndarray, num_classes: int = 12):
 
 def main(args):
     predictions = sorted(list(glob.glob(os.path.join(args.pred, "*_mask.png"))))
+    # print(predictions)
 
     total_ious = [[] for _ in range(args.num_classes - 1)]
     for pred in tqdm(predictions):
@@ -68,6 +69,8 @@ def main(args):
     total_ious = [
         float("nan") if len(iou) == 0 else (sum(iou) / len(iou)) for iou in total_ious
     ]
+    # print(total_ious)
+
     mean_ious = [iou for iou in total_ious if not math.isnan(iou)]
     mean_ious = sum(mean_ious) / len(mean_ious)
     header = ["class"] + CLASS_LIST + ["Average"]
