@@ -1,4 +1,4 @@
-# README
+# HW6
 
 ## Introduction
 
@@ -8,6 +8,15 @@ This repo provides an example code of performing semi-supervised semantic segmen
 
 >[!Tip]
 > PyTorch is provided in the `requirements.txt` with a CUDA 12.x version. Please choose the appropriate version if you have a special requirement.
+
+### Using Poetry
+
+```shell
+pip install poetry
+poetry install
+```
+
+### Using pip
 
 ```shell
 pip install -r requirements.txt
