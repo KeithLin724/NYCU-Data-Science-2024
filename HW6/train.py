@@ -56,8 +56,17 @@ def create_str_loss(loss: Dict[str, torch.Tensor], use_ssl: bool = True) -> str:
         del loss["dis_loss"]
 
     loss_list = []
-    for key, value in loss.items():
-        loss_list.append(f"{key}: {value.item():.5f}")
+    # for key, value in loss.items():
+
+    #     show = value.item() if isinstance(value, torch.Tensor) else value
+
+    #     loss_list.append(f"{key}: {show:.5f}")
+
+    loss_list = [
+        f"{key}: {value.item() if isinstance(value, torch.Tensor) else value:.5f}"
+        for key, value in loss.items()
+    ]
+
     return ", ".join(loss_list)
 
 
@@ -121,6 +130,7 @@ class Trainer:
         ) = self.accelerator.prepare(
             model, optimizer, loss_fn, train_loader, val_loader
         )
+
         if cfg.TRAIN.USE_SSL:
             for param in ema_model.parameters():
                 param.requires_grad = False
@@ -205,12 +215,13 @@ class Trainer:
                 (loader_idx % self.cfg.TRAIN.LOG_EVERY_STEP == 0)
                 or (loader_idx == len(self.train_loader))
             ):
+
                 logger.info(
                     f"Epoch [{self.current_epoch}/{self.cfg.TRAIN.EPOCHS}] | Step [{loader_idx}/{len(self.train_loader)}] | {create_str_loss(loss, use_ssl=self.cfg.TRAIN.USE_SSL)}"
                 )
                 for key, value in loss.items():
                     self.tracker.track(
-                        value.item(),
+                        value.item() if isinstance(value, torch.Tensor) else value,
                         name=f"train_{key}",
                         step=(self.current_epoch - 1) * len(self.train_loader)
                         + loader_idx,
@@ -235,7 +246,7 @@ class Trainer:
                 )
                 for key, value in loss.items():
                     self.tracker.track(
-                        value.item(),
+                        value.item() if isinstance(value, torch.Tensor) else value,
                         name=f"val_{key}",
                         step=(self.current_epoch - 1) * len(self.train_loader)
                         + loader_idx,
@@ -273,9 +284,9 @@ class Trainer:
                     "model": self.accelerator.unwrap_model(self.model).state_dict(),
                     "optimizer": self.optimizer.optimizer.state_dict(),
                     "epoch": self.current_epoch,
-                    "ema_model": self.ema_model.state_dict()
-                    if self.cfg.TRAIN.USE_SSL
-                    else None,
+                    "ema_model": (
+                        self.ema_model.state_dict() if self.cfg.TRAIN.USE_SSL else None
+                    ),
                     "ema_updater": (
                         self.ema_updater.state_dict()
                         if self.cfg.TRAIN.USE_SSL
