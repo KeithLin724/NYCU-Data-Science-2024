@@ -13,6 +13,8 @@ HW4 : [here](./HW4/README.md)
 
 HW5 : [here](./HW5/README.md)
 
+HW6 : [here](./HW6/README.md)
+
 ---
 
 ### How to initial project
